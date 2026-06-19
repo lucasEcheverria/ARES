@@ -23,7 +23,11 @@ class GobusterTool(BaseTool):
     )
     params = {
         "target": "Full URL of the target, e.g. http://192.168.1.1",
-        "wordlist": "Path to wordlist file (optional, uses a bundled default)",
+        "wordlist": (
+            "Leave this empty. A working wordlist is bundled with the tool "
+            "and used automatically. Only specify a path if you have a "
+            "specific, verified wordlist file in mind."
+        ),
         "extensions": "File extensions to search, e.g. php,html (optional)",
     }
 
