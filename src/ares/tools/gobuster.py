@@ -1,7 +1,12 @@
 import subprocess
+from pathlib import Path
 from typing import Any
 
 from .base import BaseTool
+
+# Bundled with the project so gobuster always has a working wordlist,
+# regardless of what's installed on the host system.
+DEFAULT_WORDLIST = Path(__file__).parent / "wordlists" / "common.txt"
 
 
 class GobusterTool(BaseTool):
@@ -18,23 +23,24 @@ class GobusterTool(BaseTool):
     )
     params = {
         "target": "Full URL of the target, e.g. http://192.168.1.1",
-        "wordlist": "Absolute path to the wordlist file",
+        "wordlist": "Path to wordlist file (optional, uses a bundled default)",
         "extensions": "File extensions to search, e.g. php,html (optional)",
     }
 
     def _validate(self, **kwargs: Any) -> None:
-        """Validate that target and wordlist are present and non-empty.
+        """Validate that target is present and non-empty.
+
+        wordlist is intentionally not required here — it defaults to the
+        bundled wordlist in _execute() if not provided.
 
         Args:
             **kwargs: Execution parameters.
 
         Raises:
-            ValueError: If target or wordlist are missing or empty.
+            ValueError: If target is missing or empty.
         """
         if kwargs.get("target") is None or len(kwargs["target"]) == 0:
             raise ValueError("target is required and cannot be empty")
-        if kwargs.get("wordlist") is None or len(kwargs["wordlist"]) == 0:
-            raise ValueError("wordlist is required and cannot be empty")
 
     def _execute(self, **kwargs: Any) -> tuple[str, str]:
         """Build and run the gobuster command, then parse the output.
@@ -49,7 +55,7 @@ class GobusterTool(BaseTool):
             RuntimeError: If gobuster returns a non-zero exit code.
         """
         target: str = kwargs["target"]
-        wordlist: str = kwargs["wordlist"]
+        wordlist: str = kwargs.get("wordlist") or str(DEFAULT_WORDLIST)
         extensions: str | None = kwargs.get("extensions")
 
         # Build base command in dir mode.

@@ -47,6 +47,8 @@ class NiktoTool(BaseTool):
         """
         target: str = kwargs["target"]
         port: str | None = kwargs.get("port")
+        if port is not None:
+            port = str(port)
 
         cmd = ["nikto", "-h", target]
 
