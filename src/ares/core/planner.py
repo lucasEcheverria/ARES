@@ -50,28 +50,55 @@ _FORMAT_INSTRUCTIONS = (
 )
 
 _FEW_SHOT = (
-    "Example:\n"
+    "The following examples illustrate the response format using "
+    "different tools. They are illustrative only — you must choose "
+    "whichever tool and parameters are actually appropriate for the "
+    "current situation, not copy these verbatim.\n\n"
+    "Example 1 — scanning a new target:\n"
     "Thought: I need to identify open ports on the target "
     "before enumerating services.\n"
     "Action: nmap\n"
-    'Parameters: {"target": "192.168.1.1", "mode": "quick"}'
+    'Parameters: {"target": "192.168.1.1", "mode": "quick"}\n\n'
+    "Example 2 — discovering web content:\n"
+    "Thought: A web service was found on port 80, I should look for "
+    "hidden directories and files.\n"
+    "Action: gobuster\n"
+    'Parameters: {"target": "http://192.168.1.1"}\n\n'
+    "Example 3 — checking for known vulnerabilities:\n"
+    "Thought: The web server version is known, I should check for "
+    "common vulnerabilities and misconfigurations.\n"
+    "Action: nikto\n"
+    'Parameters: {"target": "http://192.168.1.1"}\n\n'
+    "Example 4 — verifying a specific endpoint:\n"
+    "Thought: I found a /login path, I want to inspect its response "
+    "headers directly.\n"
+    "Action: curl\n"
+    'Parameters: {"url": "http://192.168.1.1/login"}\n\n'
+    "Example 5 — completing a phase:\n"
+    "Thought: The current phase's tool has already run successfully "
+    "and returned results, so the phase goal is achieved.\n"
+    "Action: finish_phase\n"
+    "Parameters: {}"
 )
 
 _PHASE_GUIDANCE = {
     Phase.RECON: (
         "Goal: identify open ports and running services.\n"
         "IMPORTANT: If 'Findings So Far' already shows a successful nmap "
-        "result with mode='services' or 'scripts', you MUST respond with "
-        "Action: finish_phase now. Do not repeat nmap."
+        "result for this phase, you MUST respond with Action: finish_phase "
+        "now. Do not repeat nmap."
     ),
     Phase.ENUMERATION: (
-        "Goal: discover web paths, files and confirm software versions. "
-        "Once gobuster has found paths (or confirmed none exist), "
-        "consider this phase complete."
+        "Goal: discover web paths, files and confirm software versions.\n"
+        "IMPORTANT: If 'Findings So Far' already shows a successful "
+        "gobuster result for this phase, you MUST respond with "
+        "Action: finish_phase now."
     ),
     Phase.VULN_SCAN: (
-        "Goal: identify known vulnerabilities and misconfigurations. "
-        "Once nikto has been run at least once, consider this phase complete."
+        "Goal: identify known vulnerabilities and misconfigurations.\n"
+        "IMPORTANT: If 'Findings So Far' already shows a successful nikto "
+        "result for this phase, you MUST respond with Action: finish_phase "
+        "now."
     ),
 }
 
