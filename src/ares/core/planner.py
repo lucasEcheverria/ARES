@@ -59,9 +59,10 @@ _FEW_SHOT = (
 
 _PHASE_GUIDANCE = {
     Phase.RECON: (
-        "Goal: identify open ports and running services. "
-        "Once nmap has been run at least once with mode='services' or "
-        "'scripts', consider this phase complete."
+        "Goal: identify open ports and running services.\n"
+        "IMPORTANT: If 'Findings So Far' already shows a successful nmap "
+        "result with mode='services' or 'scripts', you MUST respond with "
+        "Action: finish_phase now. Do not repeat nmap."
     ),
     Phase.ENUMERATION: (
         "Goal: discover web paths, files and confirm software versions. "

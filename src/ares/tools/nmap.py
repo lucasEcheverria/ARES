@@ -11,6 +11,11 @@ SCAN_MODES: dict[str, list[str]] = {
     "scripts": ["-T4", "-sV", "-sC", "-p-"],
 }
 
+# Flags that select a port range and therefore conflict with an explicit
+# -p when the caller provides a custom ports value. Centralized here so
+# adding new modes in the future doesn't silently reintroduce this bug.
+_PORT_RANGE_FLAGS = {"-F", "-p-"}
+
 
 class NmapTool(BaseTool):
     """Wrapper for nmap network scanner.
@@ -60,13 +65,13 @@ class NmapTool(BaseTool):
         mode: str = kwargs["mode"]
         ports: str | None = kwargs.get("ports")
 
-        # Copy mode flags to avoid mutating the shared SCAN_MODES dict.
-        flags = list(SCAN_MODES[mode])
-
-        # -F (fast scan) is incompatible with -p (explicit ports) in nmap.
-        # If custom ports are requested, drop -F and let -p filter instead.
-        if ports and "-F" in flags:
-            flags.remove("-F")
+        # Any flag that already selects a port range (-F, -p-, etc.) must
+        # be dropped if the caller wants to override with explicit ports —
+        # nmap rejects more than one port-selection flag at a time.
+        if ports:
+            flags = [f for f in SCAN_MODES[mode] if f not in _PORT_RANGE_FLAGS]
+        else:
+            flags = list(SCAN_MODES[mode])
 
         cmd = ["nmap"] + flags
         if ports:
