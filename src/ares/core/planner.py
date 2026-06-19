@@ -5,7 +5,7 @@ from typing import Any
 
 import ollama
 
-from .memory import TargetState
+from .memory import Phase, TargetState
 from .registry import registry
 
 
@@ -56,6 +56,23 @@ _FEW_SHOT = (
     "Action: nmap\n"
     'Parameters: {"target": "192.168.1.1", "mode": "quick"}'
 )
+
+_PHASE_GUIDANCE = {
+    Phase.RECON: (
+        "Goal: identify open ports and running services. "
+        "Once nmap has been run at least once with mode='services' or "
+        "'scripts', consider this phase complete."
+    ),
+    Phase.ENUMERATION: (
+        "Goal: discover web paths, files and confirm software versions. "
+        "Once gobuster has found paths (or confirmed none exist), "
+        "consider this phase complete."
+    ),
+    Phase.VULN_SCAN: (
+        "Goal: identify known vulnerabilities and misconfigurations. "
+        "Once nikto has been run at least once, consider this phase complete."
+    ),
+}
 
 
 class Planner:
@@ -128,6 +145,10 @@ class Planner:
         """
         tools_section = json.dumps(self.registry.schemas(), indent=2)
 
+        # Explicit completion criteria for the current phase, so the LLM
+        # has an objective signal for when to call finish_phase.
+        phase_guidance = _PHASE_GUIDANCE.get(state.current_phase, "")
+
         checklist_lines = "\n".join(
             f"- [{item.status.value}] {item.question} (attempts: {item.attempts})"
             for item in state.phase_checklist
@@ -148,6 +169,7 @@ class Planner:
             f"Context: {state.target_context or 'None provided'}\n\n"
             f"## Available Tools\n{tools_section}\n\n"
             f"## Current Phase: {state.current_phase.value}\n"
+            f"{phase_guidance}\n"
             f"### Checklist\n"
             f"{checklist_lines or 'No checklist items defined yet.'}\n\n"
             f"## Findings So Far\n"
