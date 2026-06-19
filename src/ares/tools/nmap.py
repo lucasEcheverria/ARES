@@ -60,8 +60,15 @@ class NmapTool(BaseTool):
         mode: str = kwargs["mode"]
         ports: str | None = kwargs.get("ports")
 
-        # Build command from mode flags, injecting custom ports if provided.
-        cmd = ["nmap"] + SCAN_MODES[mode]
+        # Copy mode flags to avoid mutating the shared SCAN_MODES dict.
+        flags = list(SCAN_MODES[mode])
+
+        # -F (fast scan) is incompatible with -p (explicit ports) in nmap.
+        # If custom ports are requested, drop -F and let -p filter instead.
+        if ports and "-F" in flags:
+            flags.remove("-F")
+
+        cmd = ["nmap"] + flags
         if ports:
             cmd += ["-p", ports]
         cmd.append(target)
@@ -79,14 +86,15 @@ class NmapTool(BaseTool):
                 f"nmap exited with code {result.returncode}: {result.stderr}"
             )
 
-        summary = self._parse(result.stdout)
+        summary = self._parse(result.stdout, target)
         return summary, raw_output
 
-    def _parse(self, output: str) -> str:
+    def _parse(self, output: str, target: str) -> str:
         """Extract open ports and services from nmap stdout.
 
         Args:
             output: Raw nmap stdout.
+            target: The scanned host, used in the summary header.
 
         Returns:
             Compact summary of open ports and detected services.
@@ -95,11 +103,11 @@ class NmapTool(BaseTool):
         findings: list[str] = []
 
         for line in lines:
-            # nmap marks open ports with "open" in the state column
-            if "open" in line and "/tcp" in line or "/udp" in line:
+            # nmap marks open ports with "open" in the state column.
+            if "open" in line and ("/tcp" in line or "/udp" in line):
                 findings.append(line.strip())
 
         if not findings:
             return "No open ports found."
 
-        return f"Open ports on {output.split()[0]}:\n" + "\n".join(findings)
+        return f"Open ports on {target}:\n" + "\n".join(findings)
