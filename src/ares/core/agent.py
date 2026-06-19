@@ -9,6 +9,7 @@ from .memory import (
 )
 from .planner import Planner, PlannerResponse
 from .registry import registry
+from .reporter import Reporter
 
 
 class Agent:
@@ -23,6 +24,7 @@ class Agent:
     def __init__(self) -> None:
         self.planner = Planner()
         self.registry = registry
+        self.reporter = Reporter()
 
     def run(self, state: TargetState) -> str:
         """Execute the ReAct loop until the agent finishes or hits the limit.
@@ -56,8 +58,7 @@ class Agent:
                 "Generating report with current findings."
             )
 
-        # Reporter will be wired here once implemented.
-        return ""
+        return self.reporter.generate(state)
 
     def _handle_action(self, state: TargetState, response: PlannerResponse) -> bool:
         """Dispatch one action and update state accordingly.
