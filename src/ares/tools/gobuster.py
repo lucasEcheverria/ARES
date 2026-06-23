@@ -102,7 +102,8 @@ class GobusterTool(BaseTool):
 
         for line in lines:
             # Gobuster marks found paths with their HTTP status code in brackets.
-            if line.startswith("/") and "(Status:" in line:
+            # Paths are printed without a leading slash in this version.
+            if "(Status:" in line:
                 findings.append(line.strip())
 
         if not findings:
