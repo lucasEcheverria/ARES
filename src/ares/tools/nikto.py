@@ -17,8 +17,11 @@ class NiktoTool(BaseTool):
         "misconfigurations and exposed sensitive files."
     )
     params = {
-        "target": "Full URL of the target, e.g. http://192.168.1.1",
-        "port": "Target port (optional, defaults to 80)",
+        "target": "Full URL of the target, e.g. http://192.168.1.1:8080",
+        "port": (
+            "Target port (optional). Only use this if target is a bare "
+            "host/IP without scheme. Do not use together with a full URL."
+        ),
     }
 
     def _validate(self, **kwargs: Any) -> None:
@@ -47,7 +50,12 @@ class NiktoTool(BaseTool):
         """
         target: str = kwargs["target"]
         port: str | None = kwargs.get("port")
-        if port is not None:
+
+        # nikto rejects -port when target is already a full URI with scheme,
+        # since the port would be specified twice.
+        if target.startswith("http://") or target.startswith("https://"):
+            port = None
+        elif port is not None:
             port = str(port)
 
         cmd = ["nikto", "-h", target]
