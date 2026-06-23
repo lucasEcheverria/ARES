@@ -8,6 +8,8 @@ from .base import BaseTool
 # regardless of what's installed on the host system.
 DEFAULT_WORDLIST = Path(__file__).parent / "wordlists" / "common.txt"
 
+DEFAULT_EXTENSIONS = "php,html,txt"
+
 
 class GobusterTool(BaseTool):
     """Wrapper for gobuster directory and file brute-forcer.
@@ -28,7 +30,10 @@ class GobusterTool(BaseTool):
             "and used automatically. Only specify a path if you have a "
             "specific, verified wordlist file in mind."
         ),
-        "extensions": "File extensions to search, e.g. php,html (optional)",
+        "extensions": (
+            "File extensions to search (optional). Defaults to php,html,txt "
+            "if not specified — leave empty unless you have a specific reason."
+        ),
     }
 
     def _validate(self, **kwargs: Any) -> None:
@@ -60,14 +65,12 @@ class GobusterTool(BaseTool):
         """
         target: str = kwargs["target"]
         wordlist: str = kwargs.get("wordlist") or str(DEFAULT_WORDLIST)
-        extensions: str | None = kwargs.get("extensions")
+        extensions: str = kwargs.get("extensions") or DEFAULT_EXTENSIONS
 
         # Build base command in dir mode.
         cmd = ["gobuster", "dir", "-u", target, "-w", wordlist]
 
-        # Append extensions if provided — gobuster accepts comma-separated values.
-        if extensions:
-            cmd += ["-x", extensions]
+        cmd += ["-x", extensions]
 
         result = subprocess.run(
             cmd,
