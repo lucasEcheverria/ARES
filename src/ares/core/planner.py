@@ -81,7 +81,7 @@ _FEW_SHOT = (
     "Parameters: {}"
 )
 
-_PHASE_GUIDANCE = {
+_PHASE_GUIDANCE: dict[Phase, str] = {
     Phase.RECON: (
         "Goal: identify open ports and running services.\n"
         "IMPORTANT: If 'Findings So Far' already shows a successful nmap "
@@ -99,6 +99,13 @@ _PHASE_GUIDANCE = {
         "IMPORTANT: If 'Findings So Far' already shows a successful nikto "
         "result for this phase, you MUST respond with Action: finish_phase "
         "now."
+    ),
+    Phase.REPORT: (
+        "Goal: all reconnaissance is complete and findings are ready "
+        "to be compiled into the final report.\n"
+        "IMPORTANT: You are in the final phase. There is no next phase "
+        "to advance to. You MUST respond with Action: finish now, NOT "
+        "finish_phase. Using finish_phase here will not work."
     ),
 }
 
