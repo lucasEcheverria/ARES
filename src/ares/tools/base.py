@@ -62,8 +62,9 @@ class BaseTool(ABC):
         """Execute the tool and return a structured result.
 
         Orchestrates validation, time measurement, and execution. Catches
-        any unhandled exception and packages it as a ToolFailure so the
-        ReAct loop is never interrupted by a tool failure.
+        any unhandled exception — including validation errors — and
+        packages it as a ToolFailure so the ReAct loop is never interrupted
+        by a tool failure.
 
         Args:
             **kwargs: Execution parameters specific to each tool.
@@ -72,9 +73,9 @@ class BaseTool(ABC):
             ToolSuccess with the result if execution succeeded,
             ToolFailure with the error if something went wrong.
         """
-        self._validate(**kwargs)
         start = time.time()
         try:
+            self._validate(**kwargs)
             summary, raw_output = self._execute(**kwargs)
             duration = time.time() - start
             return ToolSuccess(
