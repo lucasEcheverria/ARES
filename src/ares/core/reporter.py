@@ -1,6 +1,18 @@
 from collections import defaultdict
 
+import ollama
+
 from .memory import Finding, Phase, TargetState
+
+_CONCLUSION_PROMPT = (
+    "You are a penetration testing report writer. Based on the findings "
+    "below, write a clear, professional conclusion in plain prose "
+    "(3-5 paragraphs). Explain what was discovered, why it matters from "
+    "a security perspective, and what risks or recommendations follow. "
+    "Do not use bullet points or repeat the raw findings verbatim — "
+    "synthesize and interpret them.\n\n"
+    "Findings:\n{findings}"
+)
 
 
 class Reporter:
@@ -8,12 +20,15 @@ class Reporter:
 
     Takes the full TargetState at the end of a ReAct session and produces
     a structured Markdown report with all confirmed findings organised by
-    phase.
+    phase, plus a prose conclusion synthesized by the LLM.
     """
 
     # Defines section ordering in the report — mirrors the pipeline order
     # from ADR-001, independent of dict iteration order.
     _PHASE_ORDER = [Phase.RECON, Phase.ENUMERATION, Phase.VULN_SCAN]
+
+    def __init__(self) -> None:
+        self.model = "deepseek-r1:32b"
 
     def generate(self, state: TargetState) -> str:
         """Generate a Markdown report from the session state.
@@ -31,6 +46,7 @@ class Reporter:
             self._build_header(state),
             self._build_summary(state, tools_used),
             self._build_findings(grouped),
+            self._build_conclusion(state),
         ]
 
         return "\n\n".join(sections)
@@ -109,3 +125,35 @@ class Reporter:
                 lines.append(f"- **{finding.tool_name}**: {finding.result}")
 
         return "\n".join(lines)
+
+    def _build_conclusion(self, state: TargetState) -> str:
+        """Ask the LLM to synthesize a prose conclusion from all findings.
+
+        Falls back to a plain notice if the LLM call fails, so a
+        conclusion failure never breaks the rest of the report.
+
+        Args:
+            state: Completed session state.
+
+        Returns:
+            Markdown string for the conclusion section.
+        """
+        findings_text = "\n".join(
+            f"- [{f.phase.value}] {f.tool_name}: {f.result}" for f in state.confirmed
+        )
+
+        if not findings_text:
+            return "## Conclusion\nNo findings were collected during this session."
+
+        prompt = _CONCLUSION_PROMPT.format(findings=findings_text)
+
+        try:
+            response = ollama.chat(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            conclusion = response.message.content or ""
+        except Exception as e:
+            conclusion = f"Conclusion could not be generated: {e}"
+
+        return f"## Conclusion\n{conclusion.strip()}"
