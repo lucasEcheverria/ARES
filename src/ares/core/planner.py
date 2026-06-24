@@ -100,11 +100,14 @@ _PHASE_GUIDANCE: dict[Phase, str] = {
         "now."
     ),
     Phase.REPORT: (
-        "Goal: all reconnaissance is complete and findings are ready "
-        "to be compiled into the final report.\n"
-        "IMPORTANT: You are in the final phase. There is no next phase "
-        "to advance to. You MUST respond with Action: finish now, NOT "
-        "finish_phase. Using finish_phase here will not work."
+        "Goal: review all findings gathered so far, and only then conclude "
+        "the session.\n"
+        "Before finishing, check the findings critically: is there an "
+        "obvious gap (e.g. a discovered path never inspected with curl, "
+        "a service version never checked against known vulnerabilities)? "
+        "If so, you may call one more tool now to fill that gap.\n"
+        "If the findings are already sufficient, you MUST respond with "
+        "Action: finish now, NOT finish_phase."
     ),
 }
 
