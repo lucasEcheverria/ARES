@@ -26,7 +26,6 @@ class PlannerResponse:
     raw_response: str
 
 
-# System prompt sections follow ADR-005 ordering:
 # Identity → Objective + format → Tools → Plan → Findings → Few-shot
 _SYSTEM_IDENTITY = (
     "You are ARES, an autonomous penetration testing agent.\n"
@@ -153,9 +152,9 @@ class Planner:
             try:
                 return self._parse_response(raw)
             except ValueError as e:
+                print(f"\n[DEBUG] Raw LLM response that failed to parse:\n{raw}\n")
                 last_error = e
                 if attempt < max_retries:
-                    # Append the error so the LLM can self-correct on retry.
                     prompt += (
                         f"\n\nYour previous response could not be parsed: {e}. "
                         "Please try again following the format exactly."
@@ -219,6 +218,11 @@ class Planner:
         producing structured output. This method strips that block first,
         then extracts the three required fields.
 
+        If the model omits the literal 'Thought:' label (which happens
+        occasionally since the model already reasoned inside <think>),
+        any text appearing before 'Action:' is used as an implicit thought
+        instead of failing outright. Action and Parameters remain mandatory.
+
         Args:
             text: Raw LLM response string.
 
@@ -226,7 +230,7 @@ class Planner:
             Parsed PlannerResponse.
 
         Raises:
-            ValueError: If any required field is missing or Parameters
+            ValueError: If Action or Parameters are missing, or Parameters
                 is not valid JSON.
         """
         # Strip deepseek-r1 internal reasoning block if present.
@@ -236,12 +240,19 @@ class Planner:
         action_match = re.search(r"Action:\s*(\S+)", clean)
         params_match = re.search(r"Parameters:\s*(\{.*?\})", clean, re.DOTALL)
 
-        if not thought_match:
-            raise ValueError("Missing 'Thought' field in LLM response.")
         if not action_match:
             raise ValueError("Missing 'Action' field in LLM response.")
         if not params_match:
             raise ValueError("Missing 'Parameters' field in LLM response.")
+
+        if thought_match:
+            thought = thought_match.group(1).strip()
+        else:
+            # Fallback: treat any text before "Action:" as an implicit thought.
+            implicit_thought = clean.split("Action:")[0].strip()
+            if not implicit_thought:
+                raise ValueError("Missing 'Thought' field in LLM response.")
+            thought = implicit_thought
 
         try:
             parameters: dict[str, Any] = json.loads(params_match.group(1))
@@ -249,7 +260,7 @@ class Planner:
             raise ValueError(f"Parameters is not valid JSON: {e}") from e
 
         return PlannerResponse(
-            thought=thought_match.group(1).strip(),
+            thought=thought,
             action=action_match.group(1).strip(),
             parameters=parameters,
             raw_response=text,
