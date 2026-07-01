@@ -1,0 +1,7 @@
+services:
+  dvwa:
+    image: vulnerables/web-dvwa
+    container_name: ares-dvwa
+    ports:
+      - "8080:80"
+    restart: unless-stopped
