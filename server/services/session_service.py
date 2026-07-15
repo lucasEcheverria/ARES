@@ -74,3 +74,17 @@ class SessionService:
                 detail="Session belongs to a different user",
             )
         return session
+
+    async def delete_session(self, session_id: str, user_id: str) -> None:
+        """Delete a session, validating ownership.
+
+        Args:
+            session_id: The session's UUID.
+            user_id: The requesting user's `id`.
+
+        Raises:
+            HTTPException: 404 if the session does not exist, 403 if it belongs
+                to a different user.
+        """
+        await self.get_session(session_id, user_id)
+        await self._session_dao.delete(session_id)

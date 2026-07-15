@@ -1,11 +1,31 @@
 import { useState } from "react";
 import type { User } from "../types/user";
 
-const API_URL = "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL;
+const TOKEN_KEY = "ares_token";
+
+function decodeUser(token: string): User {
+  const payload = JSON.parse(atob(token.split(".")[1]));
+  return { id: payload.sub, email: payload.email, name: payload.name ?? payload.email };
+}
+
+export function getToken(): string | null {
+  return sessionStorage.getItem(TOKEN_KEY);
+}
+
+function initialUser(): User | null {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    return decodeUser(token);
+  } catch {
+    sessionStorage.removeItem(TOKEN_KEY);
+    return null;
+  }
+}
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(initialUser);
 
   async function loginWithGoogle(idToken: string) {
     const response = await fetch(`${API_URL}/auth/google`, {
@@ -19,17 +39,14 @@ export function useAuth() {
     }
 
     const data = await response.json();
-    setToken(data.access_token);
-
-    // Decodificamos el JWT para extraer los datos del usuario
-    const payload = JSON.parse(atob(data.access_token.split(".")[1]));
-    setUser({ id: payload.sub, email: payload.email, name: payload.name ?? payload.email });
+    sessionStorage.setItem(TOKEN_KEY, data.access_token);
+    setUser(decodeUser(data.access_token));
   }
 
   function logout() {
+    sessionStorage.removeItem(TOKEN_KEY);
     setUser(null);
-    setToken(null);
   }
 
-  return { user, token, isAuthenticated: user !== null, loginWithGoogle, logout };
+  return { user, isAuthenticated: user !== null, loginWithGoogle, logout };
 }

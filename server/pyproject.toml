@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.12"
 dependencies = [
+    "aiohttp>=3.13.2",
     "asyncmy>=0.2.11",
     "fastapi>=0.139.0",
     "google-auth>=2.55.1",
@@ -12,6 +13,7 @@ dependencies = [
     "python-jose[cryptography]>=3.5.0",
     "requests>=2.34.2",
     "sqlalchemy[asyncio]>=2.0.51",
+    "elasticsearch>=9.4.0",
     "uvicorn[standard]>=0.50.2",
 ]
 

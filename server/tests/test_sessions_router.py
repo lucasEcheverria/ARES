@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 
 from main import app
 from models.session import Session, SessionStatus
-from routers.sessions import get_current_user, get_session_service
+from routers.sessions import get_current_user, get_log_es_dao, get_session_service
 
 client = TestClient(app)
 
@@ -96,3 +96,37 @@ def test_get_session_propagates_403_from_service() -> None:
     response = client.get("/sessions/s-1", headers={"Authorization": "Bearer fake-jwt"})
 
     assert response.status_code == 403
+
+
+def test_delete_session_requires_authentication() -> None:
+    response = client.delete("/sessions/s-1")
+
+    assert response.status_code == 401
+
+
+def test_delete_session_returns_204_and_cleans_up_logs() -> None:
+    mock_service = AsyncMock()
+    mock_log_dao = AsyncMock()
+    app.dependency_overrides[get_current_user] = lambda: "user-1"
+    app.dependency_overrides[get_session_service] = lambda: mock_service
+    app.dependency_overrides[get_log_es_dao] = lambda: mock_log_dao
+
+    response = client.delete("/sessions/s-1", headers={"Authorization": "Bearer fake-jwt"})
+
+    assert response.status_code == 204
+    mock_service.delete_session.assert_awaited_once_with("s-1", "user-1")
+    mock_log_dao.delete_logs_by_session.assert_awaited_once_with("s-1")
+
+
+def test_delete_session_propagates_404_from_service() -> None:
+    mock_service = AsyncMock()
+    mock_service.delete_session.side_effect = HTTPException(status_code=404, detail="not found")
+    mock_log_dao = AsyncMock()
+    app.dependency_overrides[get_current_user] = lambda: "user-1"
+    app.dependency_overrides[get_session_service] = lambda: mock_service
+    app.dependency_overrides[get_log_es_dao] = lambda: mock_log_dao
+
+    response = client.delete("/sessions/s-1", headers={"Authorization": "Bearer fake-jwt"})
+
+    assert response.status_code == 404
+    mock_log_dao.delete_logs_by_session.assert_not_awaited()

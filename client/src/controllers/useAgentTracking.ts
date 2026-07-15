@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { AgentEvent } from "../types/agentEvent";
-import { getSessionEvents } from "../proxies/eventsProxy";
+import { getSessionLogs } from "../proxies/logsProxy";
 
 export function useAgentTracking(sessionId: string) {
   const [events, setEvents] = useState<AgentEvent[]>([]);
@@ -9,9 +9,9 @@ export function useAgentTracking(sessionId: string) {
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
-    getSessionEvents(sessionId).then((data) => {
+    getSessionLogs(sessionId).then((data) => {
       if (isMounted) {
-        setEvents(data);
+        setEvents(data.logs);
         setIsLoading(false);
       }
     });

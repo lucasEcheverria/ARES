@@ -73,3 +73,18 @@ async def test_update_report_path(sessions_db: AsyncSession) -> None:
     updated = await dao.get_by_id(created.id)
     assert updated is not None
     assert updated.report_path == "/reports/session.md"
+
+
+async def test_delete_removes_session(sessions_db: AsyncSession) -> None:
+    dao = SessionDAO(sessions_db)
+    created = await dao.create(_session_data())
+
+    await dao.delete(created.id)
+
+    assert await dao.get_by_id(created.id) is None
+
+
+async def test_delete_missing_session_is_a_noop(sessions_db: AsyncSession) -> None:
+    dao = SessionDAO(sessions_db)
+
+    await dao.delete(str(uuid.uuid4()))  # does not raise

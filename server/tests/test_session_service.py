@@ -74,3 +74,38 @@ async def test_get_session_raises_403_for_other_users_session(session_dao: Async
         await service.get_session("s-1", "user-1")
 
     assert exc_info.value.status_code == 403
+
+
+async def test_delete_session_deletes_owned_session(session_dao: AsyncMock) -> None:
+    owned = Session(id="s-1", user_id="user-1", target="10.0.0.1", status=SessionStatus.RUNNING)
+    session_dao.get_by_id.return_value = owned
+    service = SessionService(session_dao)
+
+    await service.delete_session("s-1", "user-1")
+
+    session_dao.delete.assert_awaited_once_with("s-1")
+
+
+async def test_delete_session_raises_404_when_missing(session_dao: AsyncMock) -> None:
+    session_dao.get_by_id.return_value = None
+    service = SessionService(session_dao)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await service.delete_session("missing", "user-1")
+
+    assert exc_info.value.status_code == 404
+    session_dao.delete.assert_not_awaited()
+
+
+async def test_delete_session_raises_403_for_other_users_session(session_dao: AsyncMock) -> None:
+    other_users_session = Session(
+        id="s-1", user_id="user-2", target="10.0.0.1", status=SessionStatus.RUNNING
+    )
+    session_dao.get_by_id.return_value = other_users_session
+    service = SessionService(session_dao)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await service.delete_session("s-1", "user-1")
+
+    assert exc_info.value.status_code == 403
+    session_dao.delete.assert_not_awaited()

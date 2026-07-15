@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.session import Session
@@ -83,4 +83,13 @@ class SessionDAO:
         await self._session.execute(
             update(Session).where(Session.id == session_id).values(report_path=path)
         )
+        await self._session.commit()
+
+    async def delete(self, session_id: str) -> None:
+        """Delete a session by its ID.
+
+        Args:
+            session_id: The session's UUID.
+        """
+        await self._session.execute(delete(Session).where(Session.id == session_id))
         await self._session.commit()

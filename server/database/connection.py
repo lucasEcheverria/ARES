@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncGenerator
 
+from elasticsearch import AsyncElasticsearch
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from config import settings
@@ -27,6 +28,8 @@ engine_sessions = create_async_engine(_build_url(settings.db_sessions))
 
 AsyncSessionConfig = async_sessionmaker(engine_config, expire_on_commit=False)
 AsyncSessionSessions = async_sessionmaker(engine_sessions, expire_on_commit=False)
+
+es_client = AsyncElasticsearch(hosts=[settings.elasticsearch_url])
 
 
 async def get_config_db() -> AsyncGenerator[AsyncSession]:

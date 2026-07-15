@@ -1,41 +1,37 @@
 """Session management endpoints."""
 
-import datetime
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
+from dao.log_es_dao import LogEsDAO
 from dao.session_dao import SessionDAO
-from database.connection import get_sessions_db
-from models.session import SessionStatus
+from database.connection import es_client, get_sessions_db
+from schemas.session import SessionResponse
 from services.session_service import SessionService
 
 router = APIRouter()
 _bearer_scheme = HTTPBearer()
 
+_UNAUTHORIZED_RESPONSE: dict[int | str, dict[str, Any]] = {
+    401: {"description": "Missing or invalid bearer token"}
+}
+_SESSION_LOOKUP_RESPONSES: dict[int | str, dict[str, Any]] = {
+    **_UNAUTHORIZED_RESPONSE,
+    403: {"description": "Session belongs to a different user"},
+    404: {"description": "Session not found"},
+}
+
 
 class SessionCreateRequest(BaseModel):
     """Request body for `POST /sessions`."""
 
-    target: str
-
-
-class SessionResponse(BaseModel):
-    """A session as returned by the API."""
-
-    id: str
-    user_id: str
-    target: str
-    status: SessionStatus
-    report_path: str | None
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
-
-    model_config = {"from_attributes": True}
+    target: str = Field(description="Target of the pentest (host, URL, or IP).")
 
 
 async def get_current_user(
@@ -84,7 +80,21 @@ def get_session_service(db: AsyncSession = Depends(get_sessions_db)) -> SessionS
     return SessionService(SessionDAO(db))
 
 
-@router.post("", response_model=SessionResponse)
+def get_log_es_dao() -> LogEsDAO:
+    """Build a `LogEsDAO` wired to the shared Elasticsearch client.
+
+    Returns:
+        A ready-to-use `LogEsDAO`.
+    """
+    return LogEsDAO(es_client)
+
+
+@router.post(
+    "",
+    response_model=SessionResponse,
+    summary="Create a session",
+    responses=_UNAUTHORIZED_RESPONSE,
+)
 async def create_session(
     body: SessionCreateRequest,
     user_id: str = Depends(get_current_user),
@@ -92,51 +102,59 @@ async def create_session(
 ) -> SessionResponse:
     """Create a new agent session for the authenticated user.
 
-    Args:
-        body: Request payload containing the pentest target.
-        user_id: Authenticated user's ID.
-        session_service: Injected `SessionService`.
-
-    Returns:
-        The created session.
+    The session starts in `running` status.
     """
     session = await session_service.create_session(user_id, body.target)
     return SessionResponse.model_validate(session)
 
 
-@router.get("", response_model=list[SessionResponse])
+@router.get(
+    "",
+    response_model=list[SessionResponse],
+    summary="List sessions",
+    responses=_UNAUTHORIZED_RESPONSE,
+)
 async def list_sessions(
     user_id: str = Depends(get_current_user),
     session_service: SessionService = Depends(get_session_service),
 ) -> list[SessionResponse]:
-    """List all sessions belonging to the authenticated user.
-
-    Args:
-        user_id: Authenticated user's ID.
-        session_service: Injected `SessionService`.
-
-    Returns:
-        The user's sessions.
-    """
+    """List all sessions belonging to the authenticated user, most recent first."""
     sessions = await session_service.get_user_sessions(user_id)
     return [SessionResponse.model_validate(s) for s in sessions]
 
 
-@router.get("/{session_id}", response_model=SessionResponse)
+@router.get(
+    "/{session_id}",
+    response_model=SessionResponse,
+    summary="Get a session",
+    responses=_SESSION_LOOKUP_RESPONSES,
+)
 async def get_session(
-    session_id: str,
+    session_id: str = Path(..., description="The session's UUID."),
     user_id: str = Depends(get_current_user),
     session_service: SessionService = Depends(get_session_service),
 ) -> SessionResponse:
-    """Fetch a single session owned by the authenticated user.
-
-    Args:
-        session_id: The session's UUID.
-        user_id: Authenticated user's ID.
-        session_service: Injected `SessionService`.
-
-    Returns:
-        The requested session.
-    """
+    """Fetch a single session owned by the authenticated user."""
     session = await session_service.get_session(session_id, user_id)
     return SessionResponse.model_validate(session)
+
+
+@router.delete(
+    "/{session_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a session",
+    responses=_SESSION_LOOKUP_RESPONSES,
+)
+async def delete_session(
+    session_id: str = Path(..., description="The session's UUID."),
+    user_id: str = Depends(get_current_user),
+    session_service: SessionService = Depends(get_session_service),
+    log_dao: LogEsDAO = Depends(get_log_es_dao),
+) -> None:
+    """Delete a session owned by the authenticated user, and its recorded logs.
+
+    Permanently removes the session row and all associated Elasticsearch log
+    documents. This cannot be undone.
+    """
+    await session_service.delete_session(session_id, user_id)
+    await log_dao.delete_logs_by_session(session_id)

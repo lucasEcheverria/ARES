@@ -6,15 +6,16 @@ import type { Session } from "../types/session";
 
 interface AppLayoutProps {
   sessions: Session[];
+  onDeleteSession: (id: string) => Promise<void>;
 }
 
-export function AppLayout({ sessions }: AppLayoutProps) {
+export function AppLayout({ sessions, onDeleteSession }: AppLayoutProps) {
   const { sessionId } = useParams();
 
   return (
     <div style={{ display: "flex", height: "100vh", background: "var(--ares-bg)" }}>
       <div className="hidden md:block">
-        <Sidebar sessions={sessions} />
+        <Sidebar sessions={sessions} onDeleteSession={onDeleteSession} />
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>

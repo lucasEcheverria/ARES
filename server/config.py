@@ -17,6 +17,7 @@ class Settings(BaseSettings):
         jwt_secret: Secret key used to sign and verify JWTs.
         jwt_algorithm: JWT signing algorithm.
         jwt_expire_minutes: JWT expiry in minutes.
+        elasticsearch_url: Base URL of the Elasticsearch cluster.
     """
 
     db_host: str
@@ -31,6 +32,8 @@ class Settings(BaseSettings):
     jwt_secret: str
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 10080
+
+    elasticsearch_url: str
 
     model_config = SettingsConfigDict(env_file=".env")
 

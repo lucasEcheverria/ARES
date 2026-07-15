@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Session } from "../types/session";
-import { getSessions } from "../proxies/sessionsProxy";
+import { getSessions, deleteSession as deleteSessionProxy } from "../proxies/sessionsProxy";
 
 export function useSessionList() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -19,5 +19,10 @@ export function useSessionList() {
     };
   }, []);
 
-  return { sessions, isLoading };
+  async function deleteSession(id: string) {
+    await deleteSessionProxy(id);
+    setSessions((current) => current.filter((session) => session.id !== id));
+  }
+
+  return { sessions, isLoading, deleteSession };
 }
