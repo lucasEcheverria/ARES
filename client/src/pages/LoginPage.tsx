@@ -1,12 +1,22 @@
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: (idToken: string) => Promise<void>;
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
   const navigate = useNavigate();
-  function handleLogin() { onLogin(); navigate("/new-session"); }
+
+  async function handleSuccess(credentialResponse: { credential?: string }) {
+    if (!credentialResponse.credential) return;
+    try {
+      await onLogin(credentialResponse.credential);
+      navigate("/new-session");
+    } catch {
+      alert("Error al iniciar sesión con Google");
+    }
+  }
 
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "var(--ares-bg)" }}>
@@ -15,14 +25,12 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         <p style={{ margin: "0 0 28px", fontSize: 14, color: "var(--ares-text-muted)" }}>
           Autonomous Red-teaming &amp; Exploitation System
         </p>
-        <button
-          onClick={handleLogin}
-          style={{
-            width: "100%", padding: "10px 16px", fontSize: 14, fontWeight: 500, cursor: "pointer",
-            border: "1px solid var(--ares-border-strong)", borderRadius: 6,
-            background: "var(--ares-surface)", color: "var(--ares-text)",
-          }}
-        >Continuar con Google</button>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <GoogleLogin
+            onSuccess={handleSuccess}
+            onError={() => alert("Error al iniciar sesión con Google")}
+          />
+        </div>
       </div>
     </div>
   );
