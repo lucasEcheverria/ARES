@@ -1,16 +1,21 @@
 import type { Session } from "../types/session";
-import { mockSessions } from "../mocks/sessions.mock";
-
-/**
- * Single point of truth for "where do session reads come from".
- * Today: always mock data. Later: will switch to sessionsService (real API)
- * without callers (controllers/components) needing to change.
- */
+import { getToken } from "../controllers/useAuth";
+import * as sessionsService from "../services/sessionsService";
 
 export async function getSessions(): Promise<Session[]> {
-  return mockSessions;
+  const token = getToken();
+  if (!token) return [];
+  return sessionsService.fetchSessions(token);
 }
 
 export async function getSessionById(id: string): Promise<Session | undefined> {
-  return mockSessions.find((session) => session.id === id);
+  const token = getToken();
+  if (!token) return undefined;
+  return sessionsService.fetchSessionById(token, id).catch(() => undefined);
+}
+
+export async function deleteSession(id: string): Promise<void> {
+  const token = getToken();
+  if (!token) return;
+  return sessionsService.deleteSession(token, id);
 }

@@ -11,5 +11,12 @@ __pycache__/
 .env
 .env.*
 
+client/.env
+server/.env
+
 # IDEs
 .vscode/
+
+# Node
+node_modules/
+dist/

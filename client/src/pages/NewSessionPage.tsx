@@ -1,7 +1,18 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getToken } from "../controllers/useAuth";
+import { createSession } from "../services/sessionsService";
 
 export function NewSessionPage() {
   const [target, setTarget] = useState("");
+  const navigate = useNavigate();
+
+  async function handleStart() {
+    const token = getToken();
+    if (!token || !target) return;
+    const session = await createSession(token, target);
+    navigate(`/session/${session.id}/report`);
+  }
 
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
@@ -23,7 +34,7 @@ export function NewSessionPage() {
         />
         <button
           disabled={!target}
-          onClick={() => alert(`Lanzaría sesión contra: ${target}`)}
+          onClick={handleStart}
           style={{
             width: "100%", padding: "10px 16px", fontSize: 14, fontWeight: 500, cursor: target ? "pointer" : "default",
             border: "none", borderRadius: 6,
