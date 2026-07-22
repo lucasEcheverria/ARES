@@ -2,9 +2,28 @@ from typing import Any
 
 from ..tools.base import BaseTool
 from ..tools.curl import CurlTool
+from ..tools.dig import DigTool
 from ..tools.gobuster import GobusterTool
 from ..tools.nikto import NiktoTool
 from ..tools.nmap import NmapTool
+from ..tools.nuclei import NucleiTool
+from ..tools.openssl import OpensslTool
+from ..tools.sqlmap import SqlmapTool
+from ..tools.subfinder import SubfinderTool
+from ..tools.testssl import TestsslTool
+from ..tools.whatweb import WhatwebTool
+from ..tools.whois import WhoisTool
+from ..tools.wpscan import WpscanTool
+from ..tools.zap_cli import ZapCliTool
+
+from .memory import Phase
+
+_PHASE_TOOLS: dict[Phase, list[str]] = {
+    Phase.RECON: ["nmap", "subfinder", "whatweb", "dig", "whois", "openssl", "testssl"],
+    Phase.ENUMERATION: ["gobuster", "curl", "nikto"],
+    Phase.VULN_SCAN: ["sqlmap", "nuclei", "wpscan", "zap_cli"],
+    Phase.REPORT: ["curl"],
+}
 
 
 class ToolRegistry:
@@ -20,6 +39,16 @@ class ToolRegistry:
         "gobuster": GobusterTool(),
         "nikto": NiktoTool(),
         "curl": CurlTool(),
+        "subfinder": SubfinderTool(),
+        "testssl": TestsslTool(),
+        "whatweb": WhatwebTool(),
+        "dig": DigTool(),
+        "whois": WhoisTool(),
+        "openssl": OpensslTool(),
+        "sqlmap": SqlmapTool(),
+        "zap_cli": ZapCliTool(),
+        "nuclei": NucleiTool(),
+        "wpscan": WpscanTool(),
     }
 
     def get(self, name: str) -> BaseTool:
@@ -45,6 +74,25 @@ class ToolRegistry:
             List of schema dicts, one per registered tool.
         """
         return [tool.to_schema() for tool in self._tools.values()]
+    
+    def schemas_for_phase(self, phase: Phase) -> list[dict[str, Any]]:
+        """Return tool schemas relevant to the given phase only.
+
+        Reduces prompt size by excluding tools not applicable to the
+        current phase, keeping the context window within budget.
+
+        Args:
+            phase: The current reconnaissance phase.
+
+        Returns:
+            List of schema dicts for tools available in this phase.
+        """
+        tool_names = _PHASE_TOOLS.get(phase, list(self._tools.keys()))
+        return [
+            self._tools[name].to_schema()
+            for name in tool_names
+            if name in self._tools
+        ]
 
 
 registry = ToolRegistry()

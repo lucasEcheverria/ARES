@@ -6,6 +6,7 @@ readme = "README.MD"
 requires-python = ">=3.12"
 dependencies = [
     "ollama>=0.6.2",
+    "uvicorn[standard]>=0.51.0",
 ]
 
 [build-system]

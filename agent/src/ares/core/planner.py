@@ -147,6 +147,7 @@ class Planner:
             response = ollama.chat(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
+                options={"num_ctx": 32768},
             )
             # ollama Python client returns an object, not a dict.
             # content can be None if the model returns an empty response.
@@ -180,7 +181,9 @@ class Planner:
         Returns:
             Complete prompt string ready to send to the LLM.
         """
-        tools_section = json.dumps(self.registry.schemas(), indent=2)
+        tools_section = json.dumps(
+            self.registry.schemas_for_phase(state.current_phase), indent=2
+        )
 
         # Explicit completion criteria for the current phase, so the LLM
         # has an objective signal for when to call finish_phase.
