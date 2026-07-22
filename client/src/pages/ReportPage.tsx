@@ -25,7 +25,7 @@ export function ReportPage() {
               <Markdown remarkPlugins={[remarkGfm]}>{report.markdown}</Markdown>
             ) : (
               <p style={{ color: "var(--ares-text-dim)", fontSize: 14, margin: 0 }}>
-                Aún no hay informe generado para esta sesión.
+                Informe no disponible aún.
               </p>
             )}
           </div>

@@ -3,6 +3,7 @@ import type { Session } from "../types/session";
 
 interface SidebarProps {
   sessions: Session[];
+  onDeleteSession: (id: string) => Promise<void>;
 }
 
 function dotColor(status: Session["status"]) {
@@ -17,9 +18,19 @@ function statusLabel(status: Session["status"]) {
   return "Completada";
 }
 
-export function Sidebar({ sessions }: SidebarProps) {
+export function Sidebar({ sessions, onDeleteSession }: SidebarProps) {
   const navigate = useNavigate();
   const { sessionId: activeId } = useParams();
+
+  async function handleDelete(session: Session) {
+    if (!confirm(`¿Eliminar la sesión contra "${session.target}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    await onDeleteSession(session.id);
+    if (session.id === activeId) {
+      navigate("/new-session");
+    }
+  }
 
   return (
     <aside style={{
@@ -42,31 +53,57 @@ export function Sidebar({ sessions }: SidebarProps) {
       </div>
 
       <nav style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
+        {sessions.length === 0 && (
+          <p style={{ padding: "8px 10px", fontSize: 12, color: "var(--ares-text-dim)" }}>
+            No hay sesiones aún
+          </p>
+        )}
         {sessions.map((session) => {
           const isActive = session.id === activeId;
           return (
-            <button
+            <div
               key={session.id}
-              onClick={() => navigate(`/session/${session.id}/report`)}
               style={{
-                width: "100%", display: "flex", alignItems: "center", gap: 8,
-                padding: "8px 10px", textAlign: "left", cursor: "pointer",
-                border: "1px solid transparent",
+                display: "flex", alignItems: "center", gap: 4,
                 borderRadius: 6, marginBottom: 2,
+                border: "1px solid transparent",
                 background: isActive ? "var(--ares-blue-dim)" : "transparent",
                 borderColor: isActive ? "var(--ares-blue-border)" : "transparent",
               }}
             >
-              <span style={{ width: 7, height: 7, borderRadius: "50%", flexShrink: 0, background: dotColor(session.status) }} />
-              <span style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: 13, fontWeight: 500, color: "var(--ares-text)", fontFamily: "JetBrains Mono, monospace" }}>
-                  {session.target}
+              <button
+                onClick={() => navigate(`/session/${session.id}/report`)}
+                style={{
+                  flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8,
+                  padding: "8px 10px", textAlign: "left", cursor: "pointer",
+                  border: "none", background: "transparent",
+                }}
+              >
+                <span style={{ width: 7, height: 7, borderRadius: "50%", flexShrink: 0, background: dotColor(session.status) }} />
+                <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                  <span style={{
+                    fontSize: 13, fontWeight: 500, color: "var(--ares-text)", fontFamily: "JetBrains Mono, monospace",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>
+                    {session.target}
+                  </span>
+                  <span style={{ fontSize: 11, color: "var(--ares-text-muted)" }}>
+                    {statusLabel(session.status)}
+                  </span>
                 </span>
-                <span style={{ fontSize: 11, color: "var(--ares-text-muted)" }}>
-                  {statusLabel(session.status)}
-                </span>
-              </span>
-            </button>
+              </button>
+              <button
+                onClick={() => handleDelete(session)}
+                aria-label={`Eliminar sesión ${session.target}`}
+                title="Eliminar sesión"
+                style={{
+                  flexShrink: 0, width: 22, height: 22, marginRight: 6, padding: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "none", borderRadius: 4, background: "transparent",
+                  color: "var(--ares-text-dim)", cursor: "pointer", fontSize: 14, lineHeight: 1,
+                }}
+              >&times;</button>
+            </div>
           );
         })}
       </nav>

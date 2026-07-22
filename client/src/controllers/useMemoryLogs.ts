@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AgentEvent, AgentEventType } from "../types/agentEvent";
 import type { AgentPhase } from "../types/session";
-import { getSessionEvents } from "../proxies/eventsProxy";
+import { getSessionLogs } from "../proxies/logsProxy";
+import type { LogsFilters } from "../services/logsService";
 
 export interface MemoryLogsFilters {
   type: AgentEventType | "all";
@@ -19,37 +20,35 @@ const EMPTY_FILTERS: MemoryLogsFilters = {
   to: "",
 };
 
+function toLogsFilters(filters: MemoryLogsFilters): LogsFilters {
+  return {
+    type: filters.type !== "all" ? filters.type : undefined,
+    phase: filters.phase !== "all" ? filters.phase : undefined,
+    tool: filters.tool !== "all" ? filters.tool : undefined,
+    from_dt: filters.from ? new Date(filters.from).toISOString() : undefined,
+    to_dt: filters.to ? new Date(filters.to).toISOString() : undefined,
+  };
+}
+
 export function useMemoryLogs(sessionId: string) {
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [filters, setFilters] = useState<MemoryLogsFilters>(EMPTY_FILTERS);
 
   useEffect(() => {
     let isMounted = true;
-    getSessionEvents(sessionId).then((data) => {
-      if (isMounted) setEvents(data);
+    getSessionLogs(sessionId, toLogsFilters(filters)).then((data) => {
+      if (isMounted) setEvents(data.logs);
     });
     return () => {
       isMounted = false;
     };
-  }, [sessionId]);
+  }, [sessionId, filters]);
 
   const availableTools = useMemo(() => {
     const tools = new Set<string>();
     events.forEach((event) => event.tool && tools.add(event.tool));
     return Array.from(tools);
   }, [events]);
-
-  const filteredEvents = useMemo(() => {
-    return events.filter((event) => {
-      if (filters.type !== "all" && event.type !== filters.type) return false;
-      if (filters.phase !== "all" && event.phase !== filters.phase) return false;
-      if (filters.tool !== "all" && event.tool !== filters.tool) return false;
-      const timestamp = new Date(event.timestamp).getTime();
-      if (filters.from && timestamp < new Date(filters.from).getTime()) return false;
-      if (filters.to && timestamp > new Date(filters.to).getTime()) return false;
-      return true;
-    });
-  }, [events, filters]);
 
   function updateFilter<K extends keyof MemoryLogsFilters>(key: K, value: MemoryLogsFilters[K]) {
     setFilters((current) => ({ ...current, [key]: value }));
@@ -59,5 +58,5 @@ export function useMemoryLogs(sessionId: string) {
     setFilters(EMPTY_FILTERS);
   }
 
-  return { events: filteredEvents, filters, updateFilter, resetFilters, availableTools };
+  return { events, filters, updateFilter, resetFilters, availableTools };
 }

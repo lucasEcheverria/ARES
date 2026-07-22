@@ -36,7 +36,7 @@ export function AgentGraph({ events }: AgentGraphProps) {
   const { scale, offset, zoomIn, zoomOut, reset, canZoomIn, canZoomOut, dragHandlers } = useZoomPan();
 
   if (events.length === 0) {
-    return <p style={{ color: "var(--ares-text-dim)", fontSize: 14 }}>No hay eventos registrados para esta sesión.</p>;
+    return <p style={{ color: "var(--ares-text-dim)", fontSize: 14 }}>No hay logs para esta sesión.</p>;
   }
 
   return (
