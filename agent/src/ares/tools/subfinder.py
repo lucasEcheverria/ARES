@@ -48,7 +48,7 @@ class SubfinderTool(BaseTool):
 
         # -silent strips subfinder's banner and stats, leaving one
         # subdomain per line.
-        cmd = WSL_PREFIX + ["subfinder", "-d", domain, "-silent"]
+        cmd = WSL_PREFIX + ["/home/lucas/go/bin/nuclei", "-d", domain, "-silent"]
 
         result = subprocess.run(
             cmd,

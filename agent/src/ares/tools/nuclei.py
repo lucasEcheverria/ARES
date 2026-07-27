@@ -53,7 +53,7 @@ class NucleiTool(BaseTool):
 
         # -silent strips nuclei's banner and progress bar, leaving one
         # finding per line.
-        cmd = WSL_PREFIX + ["nuclei", "-u", target, "-silent"]
+        cmd = WSL_PREFIX + ["/home/lucas/go/bin/nuclei", "-u", target, "-silent"]
 
         if severity:
             cmd += ["-severity", severity]

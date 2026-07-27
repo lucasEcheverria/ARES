@@ -1,5 +1,7 @@
 """FastAPI application entry point."""
 
+import asyncio
+import sys
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -11,6 +13,9 @@ from database.init_db import init_db
 from routers.auth import router as auth_router
 from routers.logs import router as logs_router
 from routers.sessions import router as sessions_router
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 logging.basicConfig(level=logging.INFO)
 

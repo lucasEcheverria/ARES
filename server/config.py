@@ -35,6 +35,8 @@ class Settings(BaseSettings):
 
     elasticsearch_url: str
 
+    agent_path: str
+
     model_config = SettingsConfigDict(env_file=".env")
 
 

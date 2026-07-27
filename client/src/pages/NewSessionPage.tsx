@@ -1,17 +1,20 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { createSession } from "../proxies/sessionsProxy";
+import type { AppOutletContext } from "../types/outletContext";
 
 export function NewSessionPage() {
   const [name, setName] = useState("");
   const [target, setTarget] = useState("");
   const navigate = useNavigate();
+  const { refetchSessions } = useOutletContext<AppOutletContext>();
   const canStart = Boolean(name && target);
 
   async function handleStart() {
     if (!canStart) return;
     const session = await createSession(name, target);
     if (!session) return;
+    refetchSessions();
     navigate(`/session/${session.id}/report`);
   }
 

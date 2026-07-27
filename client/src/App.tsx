@@ -9,7 +9,7 @@ import { ReportPage } from "./pages/ReportPage";
 
 function App() {
   const { isAuthenticated, loginWithGoogle } = useAuth();
-  const { sessions, deleteSession } = useSessionList(isAuthenticated);
+  const { sessions, deleteSession, refetch: refetchSessions } = useSessionList(isAuthenticated);
 
   if (!isAuthenticated) {
     return (
@@ -24,7 +24,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<AppLayout sessions={sessions} onDeleteSession={deleteSession} />}>
+        <Route path="/" element={<AppLayout sessions={sessions} onDeleteSession={deleteSession} onRefetchSessions={refetchSessions} />}>
           <Route index element={<Navigate to="/new-session" replace />} />
           <Route path="new-session" element={<NewSessionPage />} />
           <Route path="session/:sessionId/tracking" element={<AgentTrackingPage />} />

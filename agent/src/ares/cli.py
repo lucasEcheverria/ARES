@@ -26,6 +26,12 @@ def _parse_args() -> argparse.Namespace:
         default=50,
         help="Maximum number of ReAct loop iterations (default: 50).",
     )
+    parser.add_argument(
+        "--session-id",
+        required=False,
+        default=None,
+        help="Session ID from the database, used when launched by the server.",
+    )
     return parser.parse_args()
 
 
@@ -62,6 +68,7 @@ def main() -> None:
         phase_checklist=[],
         confirmed=[],
         raw=[],
+        session_id = args.session_id,
     )
 
     agent = Agent()
