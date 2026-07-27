@@ -9,7 +9,7 @@ import { ReportPage } from "./pages/ReportPage";
 
 function App() {
   const { isAuthenticated, loginWithGoogle } = useAuth();
-  const { sessions, deleteSession } = useSessionList();
+  const { sessions, deleteSession } = useSessionList(isAuthenticated);
 
   if (!isAuthenticated) {
     return (

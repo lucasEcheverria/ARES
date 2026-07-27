@@ -3,6 +3,7 @@ export type SessionStatus = "running" | "completed" | "failed";
 export interface Session {
   id: string;
   userId: string;
+  name: string;
   target: string;
   status: SessionStatus;
   currentPhase: AgentPhase | null;

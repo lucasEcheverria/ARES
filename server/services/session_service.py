@@ -19,11 +19,12 @@ class SessionService:
         """
         self._session_dao = session_dao
 
-    async def create_session(self, user_id: str, target: str) -> Session:
+    async def create_session(self, user_id: str, name: str, target: str) -> Session:
         """Create a new session owned by the given user.
 
         Args:
             user_id: The owning user's `id`.
+            name: User-provided name for the session.
             target: The target of the pentest.
 
         Returns:
@@ -33,6 +34,7 @@ class SessionService:
             {
                 "id": str(uuid.uuid4()),
                 "user_id": user_id,
+                "name": name,
                 "target": target,
                 "status": SessionStatus.RUNNING,
             }

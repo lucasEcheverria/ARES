@@ -10,9 +10,9 @@ interface AgentGraphProps {
 
 function nodeLabel(event: AgentEvent): string {
   if (event.type === "tool_call" && event.tool) return event.tool;
-  if (event.type === "tool_result" && event.tool) return `${event.tool}: resultado`;
-  if (event.type === "phase_change") return "Cambio de fase";
-  if (event.type === "thought") return "Pensamiento";
+  if (event.type === "tool_result" && event.tool) return `${event.tool}: result`;
+  if (event.type === "phase_change") return "Phase change";
+  if (event.type === "thought") return "Thought";
   return event.type;
 }
 
@@ -36,19 +36,19 @@ export function AgentGraph({ events }: AgentGraphProps) {
   const { scale, offset, zoomIn, zoomOut, reset, canZoomIn, canZoomOut, dragHandlers } = useZoomPan();
 
   if (events.length === 0) {
-    return <p style={{ color: "var(--ares-text-dim)", fontSize: 14 }}>No hay logs para esta sesión.</p>;
+    return <p style={{ color: "var(--ares-text-dim)", fontSize: 14 }}>No logs for this session.</p>;
   }
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginBottom: 12 }}>
-        <button onClick={zoomOut} disabled={!canZoomOut} aria-label="Alejar"
+        <button onClick={zoomOut} disabled={!canZoomOut} aria-label="Zoom out"
           style={{ ...btn, width: 32, height: 32, fontSize: 18, opacity: canZoomOut ? 1 : 0.35 }}
         >&minus;</button>
         <button onClick={reset}
           style={{ ...btn, padding: "0 12px", height: 32, fontSize: 12 }}
         >{Math.round(scale * 100)}%</button>
-        <button onClick={zoomIn} disabled={!canZoomIn} aria-label="Acercar"
+        <button onClick={zoomIn} disabled={!canZoomIn} aria-label="Zoom in"
           style={{ ...btn, width: 32, height: 32, fontSize: 18, opacity: canZoomIn ? 1 : 0.35 }}
         >+</button>
       </div>
@@ -125,7 +125,7 @@ export function AgentGraph({ events }: AgentGraphProps) {
         </div>
       </div>
       <p style={{ fontSize: 11, color: "var(--ares-text-dim)", marginTop: 6, fontFamily: "JetBrains Mono, monospace" }}>
-        Arrastra para moverte · Ctrl/Cmd + rueda para zoom
+        Drag to pan · Ctrl/Cmd + scroll to zoom
       </p>
     </div>
   );

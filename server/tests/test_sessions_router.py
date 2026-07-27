@@ -26,6 +26,7 @@ def _sample_session(**overrides: Any) -> Session:
     data: dict[str, Any] = {
         "id": "s-1",
         "user_id": "user-1",
+        "name": "Test session",
         "target": "10.0.0.1",
         "status": SessionStatus.RUNNING,
         "report_path": None,
@@ -37,7 +38,7 @@ def _sample_session(**overrides: Any) -> Session:
 
 
 def test_create_session_requires_authentication() -> None:
-    response = client.post("/sessions", json={"target": "10.0.0.1"})
+    response = client.post("/sessions", json={"name": "Test session", "target": "10.0.0.1"})
 
     assert response.status_code == 401  # HTTPBearer rejects missing credentials
 
@@ -50,16 +51,17 @@ def test_create_session_returns_created_session() -> None:
 
     response = client.post(
         "/sessions",
-        json={"target": "10.0.0.1"},
+        json={"name": "Test session", "target": "10.0.0.1"},
         headers={"Authorization": "Bearer fake-jwt"},
     )
 
     assert response.status_code == 200
     body = response.json()
     assert body["id"] == "s-1"
+    assert body["name"] == "Test session"
     assert body["target"] == "10.0.0.1"
     assert body["status"] == "running"
-    mock_service.create_session.assert_awaited_once_with("user-1", "10.0.0.1")
+    mock_service.create_session.assert_awaited_once_with("user-1", "Test session", "10.0.0.1")
 
 
 def test_list_sessions_returns_only_current_users_sessions() -> None:

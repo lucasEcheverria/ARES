@@ -4,32 +4,32 @@ export const mockReportsBySession: Record<string, Report> = {
   "session-2": {
     sessionId: "session-2",
     generatedAt: "2026-06-25T10:48:00Z",
-    markdown: `# Informe de pentesting: alud.es
+    markdown: `# Pentesting report: alud.es
 
-## Resumen
+## Summary
 
-Se realizó un escaneo de reconocimiento y enumeración contra el objetivo **alud.es**.
+A reconnaissance and enumeration scan was performed against the target **alud.es**.
 
-## Hallazgos
+## Findings
 
-| Puerto | Servicio | Estado |
+| Port | Service | State |
 |--------|----------|--------|
-| 80/tcp | http     | Abierto |
-| 443/tcp | https   | Abierto |
+| 80/tcp | http     | Open |
+| 443/tcp | https   | Open |
 
-- Servidor: nginx
-- Certificado TLS detectado, pendiente de revisión manual
+- Server: nginx
+- TLS certificate detected, pending manual review
 
-## Conclusión
+## Conclusion
 
-No se detectaron vulnerabilidades críticas durante el escaneo automatizado.`,
+No critical vulnerabilities were detected during the automated scan.`,
   },
 };
 
 export const mockNotesBySession: Record<string, SessionNotes> = {
   "session-2": {
     sessionId: "session-2",
-    content: "Revisar manualmente el certificado TLS, parece autofirmado.",
+    content: "Manually review the TLS certificate, it looks self-signed.",
     updatedAt: "2026-06-25T11:00:00Z",
   },
 };

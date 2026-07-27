@@ -14,7 +14,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       await onLogin(credentialResponse.credential);
       navigate("/new-session");
     } catch {
-      alert("Error al iniciar sesión con Google");
+      alert("Error signing in with Google");
     }
   }
 
@@ -28,7 +28,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         <div style={{ display: "flex", justifyContent: "center" }}>
           <GoogleLogin
             onSuccess={handleSuccess}
-            onError={() => alert("Error al iniciar sesión con Google")}
+            onError={() => alert("Error signing in with Google")}
           />
         </div>
       </div>

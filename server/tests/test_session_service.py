@@ -20,14 +20,19 @@ async def test_create_session_generates_uuid_and_running_status(
     session_dao: AsyncMock,
 ) -> None:
     session_dao.create.return_value = Session(
-        id="generated-id", user_id="user-1", target="10.0.0.1", status=SessionStatus.RUNNING
+        id="generated-id",
+        user_id="user-1",
+        name="Test session",
+        target="10.0.0.1",
+        status=SessionStatus.RUNNING,
     )
     service = SessionService(session_dao)
 
-    await service.create_session("user-1", "10.0.0.1")
+    await service.create_session("user-1", "Test session", "10.0.0.1")
 
     call_data = session_dao.create.call_args[0][0]
     assert call_data["user_id"] == "user-1"
+    assert call_data["name"] == "Test session"
     assert call_data["target"] == "10.0.0.1"
     assert call_data["status"] == SessionStatus.RUNNING
     assert isinstance(call_data["id"], str) and len(call_data["id"]) == 36

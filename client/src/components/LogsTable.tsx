@@ -12,11 +12,11 @@ interface LogsTableProps {
 }
 
 const TYPE_OPTIONS: Array<{ value: MemoryLogsFilters["type"]; label: string }> = [
-  { value: "all", label: "Todos" },
-  { value: "thought", label: "Pensamientos" },
-  { value: "tool_call", label: "Llamadas a herramienta" },
-  { value: "tool_result", label: "Resultados" },
-  { value: "phase_change", label: "Cambios de fase" },
+  { value: "all", label: "All" },
+  { value: "thought", label: "Thoughts" },
+  { value: "tool_call", label: "Tool calls" },
+  { value: "tool_result", label: "Results" },
+  { value: "phase_change", label: "Phase changes" },
 ];
 
 const PHASE_OPTIONS: Array<AgentPhase | "all"> = ["all", "RECON", "ENUMERATION", "VULN_SCAN", "REPORT"];
@@ -46,33 +46,33 @@ export function LogsTable({ events, filters, availableTools, onFilterChange, onR
     <div>
       <div style={{ background: "var(--ares-surface-raised)", border: "1px solid var(--ares-border)", borderRadius: 8, padding: 14, marginBottom: 16 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
-          <FilterField label="Tipo">
+          <FilterField label="Type">
             <select value={filters.type} onChange={(e) => onFilterChange("type", e.target.value as MemoryLogsFilters["type"])} style={controlStyle}>
               {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </FilterField>
-          <FilterField label="Fase">
+          <FilterField label="Phase">
             <select value={filters.phase} onChange={(e) => onFilterChange("phase", e.target.value as MemoryLogsFilters["phase"])} style={controlStyle}>
-              {PHASE_OPTIONS.map((p) => <option key={p} value={p}>{p === "all" ? "Todas" : p}</option>)}
+              {PHASE_OPTIONS.map((p) => <option key={p} value={p}>{p === "all" ? "All" : p}</option>)}
             </select>
           </FilterField>
-          <FilterField label="Herramienta">
+          <FilterField label="Tool">
             <select value={filters.tool} onChange={(e) => onFilterChange("tool", e.target.value)} style={controlStyle}>
-              <option value="all">Todas</option>
+              <option value="all">All</option>
               {availableTools.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </FilterField>
-          <FilterField label="Desde">
+          <FilterField label="From">
             <input type="datetime-local" value={filters.from} onChange={(e) => onFilterChange("from", e.target.value)} style={controlStyle} />
           </FilterField>
-          <FilterField label="Hasta">
+          <FilterField label="To">
             <input type="datetime-local" value={filters.to} onChange={(e) => onFilterChange("to", e.target.value)} style={controlStyle} />
           </FilterField>
         </div>
         {hasActive && (
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
             <button onClick={onReset} style={{ fontSize: 12, color: "var(--ares-blue)", background: "none", border: "none", cursor: "pointer" }}>
-              Limpiar filtros
+              Clear filters
             </button>
           </div>
         )}
@@ -82,7 +82,7 @@ export function LogsTable({ events, filters, availableTools, onFilterChange, onR
         <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "var(--ares-surface-raised)", borderBottom: "1px solid var(--ares-border)" }}>
-              {["Timestamp", "Fase", "Tipo", "Herramienta", "Log"].map((h) => (
+              {["Timestamp", "Phase", "Type", "Tool", "Log"].map((h) => (
                 <th key={h} style={{ padding: "8px 12px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "var(--ares-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
               ))}
             </tr>
@@ -108,7 +108,7 @@ export function LogsTable({ events, filters, availableTools, onFilterChange, onR
             {events.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ padding: 32, textAlign: "center", color: "var(--ares-text-dim)" }}>
-                  No hay logs para estos filtros.
+                  No logs for these filters.
                 </td>
               </tr>
             )}

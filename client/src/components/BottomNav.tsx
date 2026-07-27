@@ -6,9 +6,9 @@ export function BottomNav() {
   const { sessionId } = useParams();
 
   const items = [
-    { key: "history",  label: "Histórico", path: "/new-session" },
-    { key: "tracking", label: "Seguimiento", path: sessionId ? `/session/${sessionId}/tracking` : null },
-    { key: "report",   label: "Reporte",     path: sessionId ? `/session/${sessionId}/report`   : null },
+    { key: "history",  label: "History",  path: "/new-session" },
+    { key: "tracking", label: "Tracking", path: sessionId ? `/session/${sessionId}/tracking` : null },
+    { key: "report",   label: "Report",   path: sessionId ? `/session/${sessionId}/report`   : null },
   ];
 
   return (

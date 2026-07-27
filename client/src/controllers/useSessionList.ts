@@ -2,12 +2,19 @@ import { useEffect, useState } from "react";
 import type { Session } from "../types/session";
 import { getSessions, deleteSession as deleteSessionProxy } from "../proxies/sessionsProxy";
 
-export function useSessionList() {
+export function useSessionList(isAuthenticated: boolean) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setSessions([]);
+      setIsLoading(false);
+      return;
+    }
+
     let isMounted = true;
+    setIsLoading(true);
     getSessions().then((data) => {
       if (isMounted) {
         setSessions(data);
@@ -17,7 +24,7 @@ export function useSessionList() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   async function deleteSession(id: string) {
     await deleteSessionProxy(id);

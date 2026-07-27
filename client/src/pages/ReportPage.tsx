@@ -25,7 +25,7 @@ export function ReportPage() {
               <Markdown remarkPlugins={[remarkGfm]}>{report.markdown}</Markdown>
             ) : (
               <p style={{ color: "var(--ares-text-dim)", fontSize: 14, margin: 0 }}>
-                Informe no disponible aún.
+                Report not available yet.
               </p>
             )}
           </div>
@@ -35,7 +35,7 @@ export function ReportPage() {
       {/* Bloque 2: Logs en memoria */}
       <section>
         <h3 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 600, color: "var(--ares-text)" }}>
-          Logs en memoria
+          Memory logs
         </h3>
         <LogsTable
           events={events}

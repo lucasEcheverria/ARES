@@ -16,6 +16,7 @@ def _session_data(**overrides: Any) -> dict[str, Any]:
     data: dict[str, Any] = {
         "id": str(uuid.uuid4()),
         "user_id": "user-1",
+        "name": "Test session",
         "target": "10.0.0.1",
         "status": SessionStatus.RUNNING,
     }
