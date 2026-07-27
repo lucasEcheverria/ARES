@@ -2,13 +2,32 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from .base import BaseTool
+from .base import WSL_PREFIX, BaseTool
 
 # Bundled with the project so gobuster always has a working wordlist,
 # regardless of what's installed on the host system.
 DEFAULT_WORDLIST = Path(__file__).parent / "wordlists" / "common.txt"
 
 DEFAULT_EXTENSIONS = "php,html,txt"
+
+
+def _to_wsl_path(windows_path: Path) -> str:
+    """Convert a local Windows path to its WSL /mnt mount-point equivalent.
+
+    gobuster now runs inside WSL, so a bundled Windows path like
+    C:\\...\\common.txt is unusable as-is — it must be addressed as
+    /mnt/c/.../common.txt from inside the Linux environment.
+
+    Args:
+        windows_path: Absolute Windows path to convert.
+
+    Returns:
+        The equivalent path as seen from inside WSL.
+    """
+    resolved = windows_path.resolve()
+    drive = resolved.drive.rstrip(":").lower()
+    rest = "/".join(resolved.parts[1:])
+    return f"/mnt/{drive}/{rest}"
 
 
 class GobusterTool(BaseTool):
@@ -64,11 +83,14 @@ class GobusterTool(BaseTool):
             RuntimeError: If gobuster returns a non-zero exit code.
         """
         target: str = kwargs["target"]
-        wordlist: str = kwargs.get("wordlist") or str(DEFAULT_WORDLIST)
+        # A custom wordlist is assumed to already be a valid path inside
+        # WSL; only the bundled default (which lives on the Windows
+        # filesystem) needs translating to its /mnt mount-point equivalent.
+        wordlist: str = kwargs.get("wordlist") or _to_wsl_path(DEFAULT_WORDLIST)
         extensions: str = kwargs.get("extensions") or DEFAULT_EXTENSIONS
 
         # Build base command in dir mode.
-        cmd = ["gobuster", "dir", "-u", target, "-w", wordlist]
+        cmd = WSL_PREFIX + ["gobuster", "dir", "-u", target, "-w", wordlist]
 
         cmd += ["-x", extensions]
 

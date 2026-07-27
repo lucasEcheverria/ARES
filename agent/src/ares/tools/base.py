@@ -3,6 +3,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
+# All tools execute their underlying binary inside WSL (Ubuntu) rather than
+# natively on Windows, since the security tools this project wraps are only
+# packaged and maintained for Linux. Prepend this to every subprocess argv.
+WSL_PREFIX: list[str] = ["wsl", "-d", "Ubuntu", "-e"]
+
 
 @dataclass
 class ToolSuccess:

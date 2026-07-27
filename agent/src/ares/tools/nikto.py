@@ -1,7 +1,7 @@
 import subprocess
 from typing import Any
 
-from .base import BaseTool
+from .base import WSL_PREFIX, BaseTool
 
 
 class NiktoTool(BaseTool):
@@ -58,7 +58,7 @@ class NiktoTool(BaseTool):
         elif port is not None:
             port = str(port)
 
-        cmd = ["nikto", "-h", target]
+        cmd = WSL_PREFIX + ["nikto", "-h", target]
 
         if port:
             cmd += ["-p", port]
