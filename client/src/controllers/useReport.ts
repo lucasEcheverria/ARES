@@ -1,14 +1,27 @@
 import { useEffect, useState } from "react";
-import type { Report, SessionNotes } from "../types/report";
+import type { ReportState, SessionNotes } from "../types/report";
 import { getReport, getNotes, saveNotes } from "../proxies/reportsProxy";
 
-export function useReport(sessionId: string) {
-  const [report, setReport] = useState<Report | undefined>(undefined);
+export function useReport(sessionId: string, shouldFetchReport: boolean) {
+  const [reportState, setReportState] = useState<ReportState>({ kind: "loading" });
   const [notes, setNotes] = useState<SessionNotes | undefined>(undefined);
   const [notesVisible, setNotesVisible] = useState(true);
 
   useEffect(() => {
-    getReport(sessionId).then(setReport);
+    if (!shouldFetchReport) {
+      setReportState({ kind: "loading" });
+      return;
+    }
+    let isMounted = true;
+    getReport(sessionId).then((result) => {
+      if (isMounted) setReportState(result);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [sessionId, shouldFetchReport]);
+
+  useEffect(() => {
     getNotes(sessionId).then(setNotes);
   }, [sessionId]);
 
@@ -18,7 +31,7 @@ export function useReport(sessionId: string) {
   }
 
   return {
-    report,
+    reportState,
     notes,
     notesVisible,
     toggleNotesVisible: () => setNotesVisible((value) => !value),

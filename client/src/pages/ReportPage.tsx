@@ -11,24 +11,13 @@ import type { AppOutletContext } from "../types/outletContext";
 export function ReportPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const { refetchSessions } = useOutletContext<AppOutletContext>();
-  const { session, isLoading: isSessionLoading } = useSessionStatus(sessionId ?? "", refetchSessions);
-  const { report, notes, notesVisible, toggleNotesVisible, updateNotes } = useReport(sessionId ?? "");
+  const { session } = useSessionStatus(sessionId ?? "", refetchSessions);
+  const shouldFetchReport = session !== undefined && session.status !== "running";
+  const { reportState, notes, notesVisible, toggleNotesVisible, updateNotes } = useReport(sessionId ?? "", shouldFetchReport);
   const { events, filters, updateFilter, resetFilters, availableTools } = useMemoryLogs(sessionId ?? "");
-
-  if (isSessionLoading || session?.status === "running") {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 48 }}>
-        <p style={{ color: "var(--ares-text-dim)", fontSize: 14 }}>Agent is running...</p>
-      </div>
-    );
-  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-
-      {session?.status === "failed" && (
-        <p style={{ color: "var(--ares-red)", fontSize: 13, margin: 0 }}>Session failed.</p>
-      )}
 
       {/* Bloque 1: Reporte generado */}
       <section>
@@ -37,11 +26,19 @@ export function ReportPage() {
           background: "var(--ares-surface)", padding: 24,
         }}>
           <div className="prose prose-sm max-w-none" style={{ color: "var(--ares-text)" }}>
-            {report ? (
-              <Markdown remarkPlugins={[remarkGfm]}>{report.markdown}</Markdown>
-            ) : (
+            {!shouldFetchReport || reportState.kind === "loading" ? (
+              <p style={{ color: "var(--ares-text-dim)", fontSize: 14, margin: 0 }}>
+                Agent is running...
+              </p>
+            ) : reportState.kind === "ready" ? (
+              <Markdown remarkPlugins={[remarkGfm]}>{reportState.markdown}</Markdown>
+            ) : reportState.kind === "not-found" ? (
               <p style={{ color: "var(--ares-text-dim)", fontSize: 14, margin: 0 }}>
                 Report not available yet.
+              </p>
+            ) : (
+              <p style={{ color: "var(--ares-red)", fontSize: 14, margin: 0 }}>
+                Failed to load the report. Please try again later.
               </p>
             )}
           </div>

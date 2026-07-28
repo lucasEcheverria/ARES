@@ -37,6 +37,8 @@ class Settings(BaseSettings):
 
     agent_path: str
 
+    reports_dir: str
+
     model_config = SettingsConfigDict(env_file=".env")
 
 

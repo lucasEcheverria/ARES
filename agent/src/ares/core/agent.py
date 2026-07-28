@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 from datetime import UTC, datetime
 
 from ..tools.base import ToolSuccess
@@ -58,7 +61,15 @@ class Agent:
                 "Generating report with current findings."
             )
 
-        return self.reporter.generate(state)
+        report = self.reporter.generate(state)
+
+        if state.session_id is not None:
+            reports_dir = Path(os.environ.get("ARES_REPORTS_DIR", "../reports"))
+            reports_dir.mkdir(parents=True, exist_ok=True)
+            report_path = reports_dir / f"{state.session_id}.md"
+            report_path.write_text(report, encoding="utf-8")
+
+        return report
 
     def _handle_action(self, state: TargetState, response: PlannerResponse) -> bool:
         """Dispatch one action and update state accordingly.

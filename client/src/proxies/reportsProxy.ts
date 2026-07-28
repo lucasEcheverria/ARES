@@ -1,8 +1,12 @@
-import type { Report, SessionNotes } from "../types/report";
-import { mockReportsBySession, mockNotesBySession } from "../mocks/reports.mock";
+import type { ReportFetchResult, SessionNotes } from "../types/report";
+import { mockNotesBySession } from "../mocks/reports.mock";
+import { getToken } from "../controllers/useAuth";
+import * as reportsService from "../services/reportsService";
 
-export async function getReport(sessionId: string): Promise<Report | undefined> {
-  return mockReportsBySession[sessionId];
+export async function getReport(sessionId: string): Promise<ReportFetchResult> {
+  const token = getToken();
+  if (!token) return { kind: "error" };
+  return reportsService.fetchReport(token, sessionId);
 }
 
 export async function getNotes(sessionId: string): Promise<SessionNotes | undefined> {
