@@ -18,6 +18,7 @@ class Settings(BaseSettings):
         jwt_algorithm: JWT signing algorithm.
         jwt_expire_minutes: JWT expiry in minutes.
         elasticsearch_url: Base URL of the Elasticsearch cluster.
+        ares_es_url: Elasticsearch URL passed to the agent subprocess for logging.
     """
 
     db_host: str
@@ -34,6 +35,7 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 10080
 
     elasticsearch_url: str
+    ares_es_url: str
 
     agent_path: str
 

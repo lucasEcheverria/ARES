@@ -48,10 +48,6 @@ async def get_session_logs(
     phase: str | None = Query(
         default=None, description="Filter by phase: RECON, ENUMERATION, VULN_SCAN, or REPORT."
     ),
-    type: str | None = Query(
-        default=None,
-        description="Filter by event type: thought, tool_call, tool_result, or phase_change.",
-    ),
     tool: str | None = Query(default=None, description="Filter by tool name, e.g. `nmap`."),
     from_dt: str | None = Query(
         default=None, description="ISO 8601 lower bound (inclusive) on `created_at`."
@@ -67,8 +63,8 @@ async def get_session_logs(
 ) -> LogsResponse:
     """Fetch a page of agent logs for a session owned by the authenticated user.
 
-    Logs are sorted by `sequence` ascending. All filters are optional and are
-    combined with AND semantics.
+    Logs are sorted by `created_at` ascending. All filters are optional and
+    are combined with AND semantics.
 
     Raises:
         HTTPException: 404 if the session does not exist, 403 if it belongs
@@ -86,7 +82,6 @@ async def get_session_logs(
     result = await log_dao.get_logs(
         session_id=session_id,
         phase=phase,
-        type=type,
         tool=tool,
         from_dt=from_dt,
         to_dt=to_dt,

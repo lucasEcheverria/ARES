@@ -23,6 +23,7 @@ def _launch_agent(target: str, session_id: str) -> int:
     env = os.environ.copy()
     env.pop("VIRTUAL_ENV", None)
     env["ARES_REPORTS_DIR"] = settings.reports_dir
+    env["ARES_ES_URL"] = settings.ares_es_url
 
     result = subprocess.run(
         ["uv", "run", "python", "-m", "ares.cli",

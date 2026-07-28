@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import type { AgentEvent, AgentEventType } from "../types/agentEvent";
+import type { ToolResultLog } from "../types/toolResultLog";
 import type { AgentPhase } from "../types/session";
-import { getSessionLogs } from "../proxies/logsProxy";
-import type { LogsFilters } from "../services/logsService";
+import { getSessionLogs } from "../proxies/toolResultLogsProxy";
+import type { LogsFilters } from "../services/toolResultLogsService";
 
 export interface MemoryLogsFilters {
-  type: AgentEventType | "all";
   phase: AgentPhase | "all";
   tool: string | "all";
   from: string; // datetime-local input value, empty = no lower bound
@@ -13,7 +12,6 @@ export interface MemoryLogsFilters {
 }
 
 const EMPTY_FILTERS: MemoryLogsFilters = {
-  type: "all",
   phase: "all",
   tool: "all",
   from: "",
@@ -22,7 +20,6 @@ const EMPTY_FILTERS: MemoryLogsFilters = {
 
 function toLogsFilters(filters: MemoryLogsFilters): LogsFilters {
   return {
-    type: filters.type !== "all" ? filters.type : undefined,
     phase: filters.phase !== "all" ? filters.phase : undefined,
     tool: filters.tool !== "all" ? filters.tool : undefined,
     from_dt: filters.from ? new Date(filters.from).toISOString() : undefined,
@@ -31,13 +28,18 @@ function toLogsFilters(filters: MemoryLogsFilters): LogsFilters {
 }
 
 export function useMemoryLogs(sessionId: string) {
-  const [events, setEvents] = useState<AgentEvent[]>([]);
+  const [logs, setLogs] = useState<ToolResultLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<MemoryLogsFilters>(EMPTY_FILTERS);
 
   useEffect(() => {
     let isMounted = true;
+    setIsLoading(true);
     getSessionLogs(sessionId, toLogsFilters(filters)).then((data) => {
-      if (isMounted) setEvents(data.logs);
+      if (isMounted) {
+        setLogs(data.logs);
+        setIsLoading(false);
+      }
     });
     return () => {
       isMounted = false;
@@ -46,9 +48,9 @@ export function useMemoryLogs(sessionId: string) {
 
   const availableTools = useMemo(() => {
     const tools = new Set<string>();
-    events.forEach((event) => event.tool && tools.add(event.tool));
+    logs.forEach((log) => log.tool && tools.add(log.tool));
     return Array.from(tools);
-  }, [events]);
+  }, [logs]);
 
   function updateFilter<K extends keyof MemoryLogsFilters>(key: K, value: MemoryLogsFilters[K]) {
     setFilters((current) => ({ ...current, [key]: value }));
@@ -58,5 +60,5 @@ export function useMemoryLogs(sessionId: string) {
     setFilters(EMPTY_FILTERS);
   }
 
-  return { events, filters, updateFilter, resetFilters, availableTools };
+  return { logs, isLoading, filters, updateFilter, resetFilters, availableTools };
 }

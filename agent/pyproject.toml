@@ -5,6 +5,7 @@ description = "Autonomous Red-teaming & Exploitation System"
 requires-python = ">=3.12"
 dependencies = [
     "ollama>=0.6.2",
+    "elasticsearch>=9.4.0",
 ]
 
 [build-system]

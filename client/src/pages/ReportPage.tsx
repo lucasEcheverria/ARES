@@ -14,7 +14,7 @@ export function ReportPage() {
   const { session } = useSessionStatus(sessionId ?? "", refetchSessions);
   const shouldFetchReport = session !== undefined && session.status !== "running";
   const { reportState, notes, notesVisible, toggleNotesVisible, updateNotes } = useReport(sessionId ?? "", shouldFetchReport);
-  const { events, filters, updateFilter, resetFilters, availableTools } = useMemoryLogs(sessionId ?? "");
+  const { logs, isLoading: logsLoading, filters, updateFilter, resetFilters, availableTools } = useMemoryLogs(sessionId ?? "");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -51,7 +51,8 @@ export function ReportPage() {
           Memory logs
         </h3>
         <LogsTable
-          events={events}
+          logs={logs}
+          isLoading={logsLoading}
           filters={filters}
           availableTools={availableTools}
           onFilterChange={updateFilter}

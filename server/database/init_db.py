@@ -27,6 +27,17 @@ ARES_LOGS_MAPPING = {
     }
 }
 
+# Fields added for tool_result logging (agent writes these directly to ES).
+# Applied via PUT _mapping on every startup — additive only, never drops
+# the existing index or its pre-existing fields.
+ARES_LOGS_NEW_FIELDS = {
+    "properties": {
+        "exit_code": {"type": "integer"},
+        "lines": {"type": "text"},
+        "metadata": {"type": "object", "enabled": True},
+    }
+}
+
 
 async def init_db() -> None:
     """Create all tables and the Elasticsearch index if they do not already exist.
@@ -51,3 +62,6 @@ async def init_db() -> None:
     if not await es_client.indices.exists(index=ARES_LOGS_INDEX):
         await es_client.indices.create(index=ARES_LOGS_INDEX, body=ARES_LOGS_MAPPING)
     logger.info("Elasticsearch index '%s' checked/created", ARES_LOGS_INDEX)
+
+    await es_client.indices.put_mapping(index=ARES_LOGS_INDEX, body=ARES_LOGS_NEW_FIELDS)
+    logger.info("Elasticsearch index '%s' mapping updated with new log fields", ARES_LOGS_INDEX)

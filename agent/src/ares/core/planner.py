@@ -89,15 +89,22 @@ _PHASE_GUIDANCE: dict[Phase, str] = {
     ),
     Phase.ENUMERATION: (
         "Goal: discover web paths, files and confirm software versions.\n"
-        "IMPORTANT: If 'Findings So Far' already shows a successful "
-        "gobuster result for this phase, you MUST respond with "
-        "Action: finish_phase now."
+        "After gobuster completes, you MUST inspect the most interesting "
+        "discovered paths with curl to understand what they contain.\n"
+        "Do NOT finish_phase immediately after gobuster. "
+        "Only respond with Action: finish_phase when you have inspected "
+        "the key discovered paths and confirmed their content."
     ),
     Phase.VULN_SCAN: (
-        "Goal: identify known vulnerabilities and misconfigurations.\n"
-        "IMPORTANT: If 'Findings So Far' already shows a successful nikto "
-        "result for this phase, you MUST respond with Action: finish_phase "
-        "now."
+        "Goal: actively test all discovered paths and services for vulnerabilities.\n"
+        "You MUST test ALL routes discovered during ENUMERATION before finishing. "
+        "For each discovered path, consider: SQL injection (sqlmap), XSS, "
+        "authentication bypass, and known CVEs.\n"
+        "Do NOT finish_phase after running only one tool. "
+        "Check 'Findings So Far' — if there are discovered paths that have NOT "
+        "been tested for injection or authentication issues, you MUST test them now.\n"
+        "Only respond with Action: finish_phase when ALL discovered routes "
+        "have been tested with at least one vulnerability scanner."
     ),
     Phase.REPORT: (
         "Goal: review all findings gathered so far, and only then conclude "

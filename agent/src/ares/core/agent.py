@@ -1,9 +1,9 @@
 import os
+from datetime import UTC, datetime
 from pathlib import Path
 
-from datetime import UTC, datetime
-
-from ..tools.base import ToolSuccess
+from ..tools.base import ToolResult, ToolSuccess
+from . import es_logger
 from .memory import (
     Finding,
     FindingStatus,
@@ -28,6 +28,7 @@ class Agent:
         self.planner = Planner()
         self.registry = registry
         self.reporter = Reporter()
+        self._last_tool_result: tuple[str, ToolResult] | None = None
 
     def run(self, state: TargetState) -> str:
         """Execute the ReAct loop until the agent finishes or hits the limit.
@@ -52,6 +53,12 @@ class Agent:
             print(f"Action: {response.action}")
 
             should_stop = self._handle_action(state, response)
+
+            if state.session_id is not None and self._last_tool_result is not None:
+                tool_name, result = self._last_tool_result
+                es_logger.log_tool_result(state, tool_name, result)
+                self._last_tool_result = None
+
             if should_stop:
                 break
         else:
@@ -122,6 +129,7 @@ class Agent:
 
         # Unpack parameters as keyword arguments — matches BaseTool.run() signature.
         result = tool.run(**response.parameters)
+        self._last_tool_result = (response.action, result)
 
         finding = Finding(
             tool_name=response.action,
