@@ -1,0 +1,70 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
+:root {
+  --ares-bg: #f8f9fa;
+  --ares-surface: #ffffff;
+  --ares-surface-raised: #f1f3f4;
+  --ares-border: #e0e0e0;
+  --ares-border-strong: #bdc1c6;
+  --ares-text: #202124;
+  --ares-text-muted: #5f6368;
+  --ares-text-dim: #9aa0a6;
+
+  --ares-blue: #0052ff;
+  --ares-blue-dim: #d6e4ff;
+  --ares-blue-border: #7ea6ff;
+  --ares-blue-text: #0041cc;
+
+  --ares-purple: #7c3aed;
+  --ares-purple-dim: #ece1fd;
+  --ares-purple-border: #b98cf5;
+  --ares-purple-text: #6423c9;
+
+  --ares-green: #007c43;
+  --ares-green-dim: #dcf8e8;
+  --ares-green-border: #4fd992;
+
+  --ares-red: #d81f26;
+  --ares-red-dim: #ffe3e5;
+  --ares-red-border: #ff9aa0;
+
+  --ares-amber: #b84e00;
+  --ares-amber-dim: #fff1e0;
+  --ares-amber-border: #ffab5c;
+}
+
+body {
+  background-color: var(--ares-bg);
+  color: var(--ares-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", sans-serif;
+}
+
+.font-mono-ares {
+  font-family: "JetBrains Mono", monospace;
+}
+
+@keyframes ares-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ares-node-enter {
+  animation: ares-fade-in 0.25s ease-out backwards;
+}
+
+@keyframes ares-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.ares-live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ares-green);
+  animation: ares-pulse 1.4s ease-in-out infinite;
+}
