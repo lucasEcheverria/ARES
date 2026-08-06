@@ -13,8 +13,9 @@ export function ReportPage() {
   const { refetchSessions } = useOutletContext<AppOutletContext>();
   const { session } = useSessionStatus(sessionId ?? "", refetchSessions);
   const shouldFetchReport = session !== undefined && session.status !== "running";
+  const isSessionRunning = session === undefined || session.status === "running";
   const { reportState, notes, notesVisible, toggleNotesVisible, updateNotes } = useReport(sessionId ?? "", shouldFetchReport);
-  const { logs, isLoading: logsLoading, filters, updateFilter, resetFilters, availableTools } = useMemoryLogs(sessionId ?? "");
+  const { logs, isLoading: logsLoading, filters, updateFilter, resetFilters, availableTools } = useMemoryLogs(sessionId ?? "", isSessionRunning);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -53,6 +54,7 @@ export function ReportPage() {
         <LogsTable
           logs={logs}
           isLoading={logsLoading}
+          isLive={isSessionRunning}
           filters={filters}
           availableTools={availableTools}
           onFilterChange={updateFilter}

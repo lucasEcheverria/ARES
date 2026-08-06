@@ -1,9 +1,10 @@
 import os
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from ..tools.base import ToolResult, ToolSuccess
-from . import es_logger
+from . import es_logger, graph_logger
 from .memory import (
     Finding,
     FindingStatus,
@@ -22,13 +23,14 @@ class Agent:
     the Thought → Action → Observation cycle defined in ADR-004.
     """
 
-    MAX_ITERATIONS = 50
+    MAX_ITERATIONS = 100
 
     def __init__(self) -> None:
         self.planner = Planner()
         self.registry = registry
         self.reporter = Reporter()
         self._last_tool_result: tuple[str, ToolResult] | None = None
+        self._event_sequence = 0
 
     def run(self, state: TargetState) -> str:
         """Execute the ReAct loop until the agent finishes or hits the limit.
@@ -43,6 +45,8 @@ class Agent:
         Returns:
             Final markdown report as a string.
         """
+        self._event_sequence = 0
+
         for iteration in range(self.MAX_ITERATIONS):
             print(f"\n[iteration {iteration + 1}/{self.MAX_ITERATIONS}]")
 
@@ -51,6 +55,26 @@ class Agent:
             # Print the LLM reasoning so the user can follow along in the CLI.
             print(f"Thought: {response.thought}")
             print(f"Action: {response.action}")
+
+            if state.session_id is not None:
+                graph_logger.log_event(
+                    session_id=state.session_id,
+                    sequence=self._next_sequence(),
+                    phase=state.current_phase.value.upper(),
+                    event_type="thought",
+                    content=response.thought,
+                )
+                if response.action not in ("finish", "finish_phase"):
+                    graph_logger.log_event(
+                        session_id=state.session_id,
+                        sequence=self._next_sequence(),
+                        phase=state.current_phase.value.upper(),
+                        event_type="tool_call",
+                        content=self._format_tool_call(
+                            response.action, response.parameters
+                        ),
+                        tool=response.action,
+                    )
 
             should_stop = self._handle_action(state, response)
 
@@ -77,6 +101,31 @@ class Agent:
             report_path.write_text(report, encoding="utf-8")
 
         return report
+
+    def _next_sequence(self) -> int:
+        """Return the next monotonically increasing graph event sequence number.
+
+        Returns:
+            The current counter value, before incrementing it for next time.
+        """
+        sequence = self._event_sequence
+        self._event_sequence += 1
+        return sequence
+
+    def _format_tool_call(self, tool_name: str, parameters: dict[str, Any]) -> str:
+        """Render a tool call as a compact, human-readable string.
+
+        Args:
+            tool_name: Name of the tool being called.
+            parameters: Arguments passed to the tool.
+
+        Returns:
+            A string like "gobuster target=http://localhost:8080".
+        """
+        if not parameters:
+            return tool_name
+        params = " ".join(f"{key}={value}" for key, value in parameters.items())
+        return f"{tool_name} {params}"
 
     def _handle_action(self, state: TargetState, response: PlannerResponse) -> bool:
         """Dispatch one action and update state accordingly.
@@ -176,6 +225,19 @@ class Agent:
                 f"\n[→] Advancing phase: "
                 f"{state.current_phase.value} → {next_phase.value}"
             )
+
+            if state.session_id is not None:
+                graph_logger.log_event(
+                    session_id=state.session_id,
+                    sequence=self._next_sequence(),
+                    phase=next_phase.value.upper(),
+                    event_type="phase_change",
+                    content=(
+                        f"Phase changed from {state.current_phase.value.upper()} "
+                        f"to {next_phase.value.upper()}"
+                    ),
+                )
+
             state.current_phase = next_phase
             # Reset phase checklist on phase entry — new phase, new goals.
             state.phase_checklist = []

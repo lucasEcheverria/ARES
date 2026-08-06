@@ -13,22 +13,27 @@
   --ares-text-muted: #5f6368;
   --ares-text-dim: #9aa0a6;
 
-  --ares-blue: #1a73e8;
-  --ares-blue-dim: #e8f0fe;
-  --ares-blue-border: #aecbfa;
-  --ares-blue-text: #1558d6;
+  --ares-blue: #0052ff;
+  --ares-blue-dim: #d6e4ff;
+  --ares-blue-border: #7ea6ff;
+  --ares-blue-text: #0041cc;
 
-  --ares-green: #137333;
-  --ares-green-dim: #e6f4ea;
-  --ares-green-border: #a8d5b5;
+  --ares-purple: #7c3aed;
+  --ares-purple-dim: #ece1fd;
+  --ares-purple-border: #b98cf5;
+  --ares-purple-text: #6423c9;
 
-  --ares-red: #c5221f;
-  --ares-red-dim: #fce8e6;
-  --ares-red-border: #f5c6c5;
+  --ares-green: #007c43;
+  --ares-green-dim: #dcf8e8;
+  --ares-green-border: #4fd992;
 
-  --ares-amber: #b06000;
-  --ares-amber-dim: #fef7e0;
-  --ares-amber-border: #fdd663;
+  --ares-red: #d81f26;
+  --ares-red-dim: #ffe3e5;
+  --ares-red-border: #ff9aa0;
+
+  --ares-amber: #b84e00;
+  --ares-amber-dim: #fff1e0;
+  --ares-amber-border: #ffab5c;
 }
 
 body {
@@ -48,4 +53,18 @@ body {
 
 .ares-node-enter {
   animation: ares-fade-in 0.25s ease-out backwards;
+}
+
+@keyframes ares-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.ares-live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ares-green);
+  animation: ares-pulse 1.4s ease-in-out infinite;
 }

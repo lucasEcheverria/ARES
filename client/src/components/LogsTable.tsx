@@ -7,6 +7,7 @@ import type { AgentPhase } from "../types/session";
 interface LogsTableProps {
   logs: ToolResultLog[];
   isLoading: boolean;
+  isLive: boolean;
   filters: MemoryLogsFilters;
   availableTools: string[];
   onFilterChange: <K extends keyof MemoryLogsFilters>(key: K, value: MemoryLogsFilters[K]) => void;
@@ -42,12 +43,20 @@ function phaseColors(phase: string) {
 
 const TABLE_COLUMNS = ["Timestamp", "Phase", "Tool", "Exit Code", "Preview"];
 
-export function LogsTable({ logs, isLoading, filters, availableTools, onFilterChange, onReset }: LogsTableProps) {
+export function LogsTable({ logs, isLoading, isLive, filters, availableTools, onFilterChange, onReset }: LogsTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const hasActive = filters.phase !== "all" || filters.tool !== "all" || filters.from !== "" || filters.to !== "";
 
   return (
     <div>
+      {isLive && (
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+          <span className="ares-live-dot" />
+          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--ares-green)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Live
+          </span>
+        </div>
+      )}
       <div style={{ background: "var(--ares-surface-raised)", border: "1px solid var(--ares-border)", borderRadius: 8, padding: 14, marginBottom: 16 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
           <FilterField label="Phase">

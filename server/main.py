@@ -1,8 +1,8 @@
 """FastAPI application entry point."""
 
 import asyncio
-import sys
 import logging
+import sys
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database.init_db import init_db
 from routers.auth import router as auth_router
+from routers.events import router as events_router
 from routers.logs import router as logs_router
 from routers.report import router as report_router
 from routers.sessions import router as sessions_router
@@ -61,3 +62,4 @@ app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(sessions_router, prefix="/sessions", tags=["sessions"])
 app.include_router(report_router, prefix="/sessions", tags=["sessions"])
 app.include_router(logs_router, prefix="/sessions", tags=["logs"])
+app.include_router(events_router, prefix="/sessions", tags=["sessions"])

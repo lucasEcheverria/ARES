@@ -20,8 +20,8 @@ from .memory import Phase
 
 _PHASE_TOOLS: dict[Phase, list[str]] = {
     Phase.RECON: ["nmap", "subfinder", "whatweb", "dig", "whois", "openssl", "testssl"],
-    Phase.ENUMERATION: ["gobuster", "curl", "nikto"],
-    Phase.VULN_SCAN: ["sqlmap", "nuclei", "wpscan", "zap_cli"],
+    Phase.ENUMERATION: ["gobuster", "nikto"],
+    Phase.VULN_SCAN: ["sqlmap", "nuclei", "wpscan", "zap_cli", "curl"],
     Phase.REPORT: ["curl"],
 }
 

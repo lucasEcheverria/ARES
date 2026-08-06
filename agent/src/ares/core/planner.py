@@ -89,14 +89,14 @@ _PHASE_GUIDANCE: dict[Phase, str] = {
     ),
     Phase.ENUMERATION: (
         "Goal: discover web paths, files and confirm software versions.\n"
-        "After gobuster completes, you MUST inspect the most interesting "
-        "discovered paths with curl to understand what they contain.\n"
-        "Do NOT finish_phase immediately after gobuster. "
-        "Only respond with Action: finish_phase when you have inspected "
-        "the key discovered paths and confirmed their content."
+        "Use gobuster to discover routes and nikto to fingerprint the server.\n"
+        "Do NOT use curl in this phase — route inspection happens in VULN_SCAN.\n"
+        "Only respond with Action: finish_phase when gobuster and nikto "
+        "have both completed successfully."
     ),
     Phase.VULN_SCAN: (
         "Goal: actively test all discovered paths and services for vulnerabilities.\n"
+        "You may use curl to inspect specific routes before testing them.\n"
         "You MUST test ALL routes discovered during ENUMERATION before finishing. "
         "For each discovered path, consider: SQL injection (sqlmap), XSS, "
         "authentication bypass, and known CVEs.\n"
@@ -107,13 +107,9 @@ _PHASE_GUIDANCE: dict[Phase, str] = {
         "have been tested with at least one vulnerability scanner."
     ),
     Phase.REPORT: (
-        "Goal: review all findings gathered so far, and only then conclude "
-        "the session.\n"
-        "Before finishing, check the findings critically: is there an "
-        "obvious gap (e.g. a discovered path never inspected with curl, "
-        "a service version never checked against known vulnerabilities)? "
-        "If so, you may call one more tool now to fill that gap.\n"
-        "If the findings are already sufficient, you MUST respond with "
+        "Goal: review all findings gathered so far and conclude the session.\n"
+        "Do NOT call any tools in this phase.\n"
+        "If the findings are sufficient, you MUST respond with "
         "Action: finish now, NOT finish_phase."
     ),
 }

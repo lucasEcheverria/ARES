@@ -4,6 +4,8 @@ import type { AgentPhase } from "../types/session";
 import { getSessionLogs } from "../proxies/toolResultLogsProxy";
 import type { LogsFilters } from "../services/toolResultLogsService";
 
+const POLL_INTERVAL_MS = 5000;
+
 export interface MemoryLogsFilters {
   phase: AgentPhase | "all";
   tool: string | "all";
@@ -27,24 +29,34 @@ function toLogsFilters(filters: MemoryLogsFilters): LogsFilters {
   };
 }
 
-export function useMemoryLogs(sessionId: string) {
+export function useMemoryLogs(sessionId: string, isRunning: boolean) {
   const [logs, setLogs] = useState<ToolResultLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<MemoryLogsFilters>(EMPTY_FILTERS);
 
   useEffect(() => {
     let isMounted = true;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
     setIsLoading(true);
-    getSessionLogs(sessionId, toLogsFilters(filters)).then((data) => {
+
+    async function fetchLogs() {
+      const data = await getSessionLogs(sessionId, toLogsFilters(filters));
       if (isMounted) {
         setLogs(data.logs);
         setIsLoading(false);
       }
-    });
+    }
+
+    fetchLogs();
+    if (isRunning) {
+      intervalId = setInterval(fetchLogs, POLL_INTERVAL_MS);
+    }
+
     return () => {
       isMounted = false;
+      if (intervalId !== undefined) clearInterval(intervalId);
     };
-  }, [sessionId, filters]);
+  }, [sessionId, filters, isRunning]);
 
   const availableTools = useMemo(() => {
     const tools = new Set<string>();

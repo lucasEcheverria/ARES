@@ -24,6 +24,11 @@ def _launch_agent(target: str, session_id: str) -> int:
     env.pop("VIRTUAL_ENV", None)
     env["ARES_REPORTS_DIR"] = settings.reports_dir
     env["ARES_ES_URL"] = settings.ares_es_url
+    env["ARES_DB_HOST"] = settings.ares_db_host
+    env["ARES_DB_PORT"] = str(settings.ares_db_port)
+    env["ARES_DB_USER"] = settings.ares_db_user
+    env["ARES_DB_PASSWORD"] = settings.ares_db_password
+    env["ARES_DB_SESSIONS"] = settings.ares_db_sessions
 
     result = subprocess.run(
         ["uv", "run", "python", "-m", "ares.cli",

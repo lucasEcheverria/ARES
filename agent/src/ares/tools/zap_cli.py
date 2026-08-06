@@ -1,15 +1,21 @@
-import json
 import subprocess
-import uuid
 from typing import Any
+from xml.etree import ElementTree
 
 from .base import WSL_PREFIX, BaseTool
+
+# zaproxy is installed as a snap package; its `zaproxy` shim on PATH tries
+# to launch the GUI even under `wsl -e`, which has no display and always
+# exits 1. Invoking the real binary directly with -cmd runs it headless.
+ZAP_BINARY = "/snap/bin/zaproxy"
+
+REPORT_PATH = "/tmp/zap_report.xml"
 
 
 class ZapCliTool(BaseTool):
     """Wrapper for OWASP ZAP's headless command-line quick scan.
 
-    Runs the `zaproxy` binary in `-cmd` (headless) mode, which spiders
+    Runs the ZAP binary directly in `-cmd` (headless) mode, which spiders
     and active-scans a target URL, then reports the alerts found.
     """
 
@@ -35,30 +41,25 @@ class ZapCliTool(BaseTool):
             raise ValueError("target is required and cannot be empty")
 
     def _execute(self, **kwargs: Any) -> tuple[str, str]:
-        """Build and run the zaproxy quick-scan command, then parse the report.
+        """Build and run the ZAP quick-scan command, then parse the report.
 
         Args:
             **kwargs: Validated execution parameters.
 
         Returns:
             Tuple of (summary, raw_output).
-
-        Raises:
-            RuntimeError: If zaproxy fails to produce a scan report.
         """
         target: str = kwargs["target"]
-        report_path = f"/tmp/ares_zap_{uuid.uuid4().hex}.json"
 
         # -cmd runs ZAP headless. -quickurl spiders and active-scans the
-        # target, -quickout writes a structured report — the .json
-        # extension selects JSON format instead of ZAP's default HTML.
+        # target, -quickout writes a structured XML report.
         cmd = WSL_PREFIX + [
-            "zaproxy",
+            ZAP_BINARY,
             "-cmd",
             "-quickurl",
             target,
             "-quickout",
-            report_path,
+            REPORT_PATH,
         ]
 
         result = subprocess.run(
@@ -68,41 +69,43 @@ class ZapCliTool(BaseTool):
         )
 
         report = subprocess.run(
-            WSL_PREFIX + ["cat", report_path],
+            WSL_PREFIX + ["cat", REPORT_PATH],
             capture_output=True,
             text=True,
         )
 
-        raw_output = result.stdout + result.stderr + report.stdout
+        raw_output = result.stdout + result.stderr
 
-        if result.returncode != 0 and report.returncode != 0:
-            raise RuntimeError(
-                f"zaproxy exited with code {result.returncode}: {result.stderr}"
-            )
+        # ZAP's own exit code is unreliable in a headless WSL environment
+        # (it may be non-zero even after a successful scan) — only the
+        # presence of the report file tells us whether the scan produced
+        # usable output.
+        if report.returncode != 0 or not report.stdout.strip():
+            fallback_summary = result.stdout.strip() or "No output captured."
+            return fallback_summary, raw_output
 
         summary = self._parse(report.stdout)
-        return summary, raw_output
+        return summary, raw_output + report.stdout
 
-    def _parse(self, report_json: str) -> str:
-        """Extract alerts from the ZAP JSON report.
+    def _parse(self, report_xml: str) -> str:
+        """Extract alerts from the ZAP XML report.
 
         Args:
-            report_json: Raw contents of the ZAP quick-scan JSON report.
+            report_xml: Raw contents of the ZAP quick-scan XML report.
 
         Returns:
             Compact summary of alerts grouped by risk level.
         """
         try:
-            report = json.loads(report_json)
-        except json.JSONDecodeError:
+            root = ElementTree.fromstring(report_xml)
+        except ElementTree.ParseError:
             return "No alerts found."
 
         findings: list[str] = []
-        for site in report.get("site", []):
-            for alert in site.get("alerts", []):
-                risk = alert.get("riskdesc", "Unknown")
-                name = alert.get("name", "Unknown")
-                findings.append(f"[{risk}] {name}")
+        for alertitem in root.iter("alertitem"):
+            name = alertitem.findtext("name", default="Unknown")
+            riskdesc = alertitem.findtext("riskdesc", default="Unknown")
+            findings.append(f"[{riskdesc}] {name}")
 
         if not findings:
             return "No alerts found."
