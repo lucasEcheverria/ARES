@@ -1,7 +1,7 @@
 import subprocess
 from typing import Any
 
-from .base import BaseTool
+from .base import WSL_PREFIX, BaseTool
 
 
 class CurlTool(BaseTool):
@@ -53,7 +53,7 @@ class CurlTool(BaseTool):
         headers: str | None = kwargs.get("headers")
 
         # -s silences progress bar, -i includes response headers in output.
-        cmd = ["curl", "-s", "-i", "-X", method]
+        cmd = WSL_PREFIX + ["curl", "-s", "-i", "-X", method]
 
         if headers:
             cmd += ["-H", headers]

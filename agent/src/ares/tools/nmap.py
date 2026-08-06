@@ -1,7 +1,7 @@
 import subprocess
 from typing import Any
 
-from .base import BaseTool
+from .base import WSL_PREFIX, BaseTool
 
 # Maps each mode to its nmap flags.
 # Kept at module level to avoid rebuilding the dict on every call.
@@ -73,7 +73,7 @@ class NmapTool(BaseTool):
         else:
             flags = list(SCAN_MODES[mode])
 
-        cmd = ["nmap"] + flags
+        cmd = WSL_PREFIX + ["nmap"] + flags
         if ports:
             cmd += ["-p", ports]
         cmd.append(target)

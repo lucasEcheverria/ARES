@@ -1,15 +1,21 @@
-import { useParams } from "react-router-dom";
+import { useParams, useOutletContext } from "react-router-dom";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useReport } from "../controllers/useReport";
 import { useMemoryLogs } from "../controllers/useMemoryLogs";
+import { useSessionStatus } from "../controllers/useSessionStatus";
 import { NotesEditor } from "../components/NotesEditor";
 import { LogsTable } from "../components/LogsTable";
+import type { AppOutletContext } from "../types/outletContext";
 
 export function ReportPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
-  const { report, notes, notesVisible, toggleNotesVisible, updateNotes } = useReport(sessionId ?? "");
-  const { events, filters, updateFilter, resetFilters, availableTools } = useMemoryLogs(sessionId ?? "");
+  const { refetchSessions } = useOutletContext<AppOutletContext>();
+  const { session } = useSessionStatus(sessionId ?? "", refetchSessions);
+  const shouldFetchReport = session !== undefined && session.status !== "running";
+  const isSessionRunning = session === undefined || session.status === "running";
+  const { reportState, notes, notesVisible, toggleNotesVisible, updateNotes } = useReport(sessionId ?? "", shouldFetchReport);
+  const { logs, isLoading: logsLoading, filters, updateFilter, resetFilters, availableTools } = useMemoryLogs(sessionId ?? "", isSessionRunning);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -21,11 +27,19 @@ export function ReportPage() {
           background: "var(--ares-surface)", padding: 24,
         }}>
           <div className="prose prose-sm max-w-none" style={{ color: "var(--ares-text)" }}>
-            {report ? (
-              <Markdown remarkPlugins={[remarkGfm]}>{report.markdown}</Markdown>
-            ) : (
+            {!shouldFetchReport || reportState.kind === "loading" ? (
               <p style={{ color: "var(--ares-text-dim)", fontSize: 14, margin: 0 }}>
-                Informe no disponible aún.
+                Agent is running...
+              </p>
+            ) : reportState.kind === "ready" ? (
+              <Markdown remarkPlugins={[remarkGfm]}>{reportState.markdown}</Markdown>
+            ) : reportState.kind === "not-found" ? (
+              <p style={{ color: "var(--ares-text-dim)", fontSize: 14, margin: 0 }}>
+                Report not available yet.
+              </p>
+            ) : (
+              <p style={{ color: "var(--ares-red)", fontSize: 14, margin: 0 }}>
+                Failed to load the report. Please try again later.
               </p>
             )}
           </div>
@@ -35,10 +49,12 @@ export function ReportPage() {
       {/* Bloque 2: Logs en memoria */}
       <section>
         <h3 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 600, color: "var(--ares-text)" }}>
-          Logs en memoria
+          Memory logs
         </h3>
         <LogsTable
-          events={events}
+          logs={logs}
+          isLoading={logsLoading}
+          isLive={isSessionRunning}
           filters={filters}
           availableTools={availableTools}
           onFilterChange={updateFilter}

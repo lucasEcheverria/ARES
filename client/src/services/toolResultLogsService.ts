@@ -1,10 +1,9 @@
-import type { AgentEvent } from "../types/agentEvent";
+import type { ToolResultLog } from "../types/toolResultLog";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export interface LogsFilters {
   phase?: string;
-  type?: string;
   tool?: string;
   from_dt?: string;
   to_dt?: string;
@@ -14,30 +13,7 @@ export interface LogsFilters {
 
 export interface LogsResponse {
   total: number;
-  logs: AgentEvent[];
-}
-
-interface RawLogEntry {
-  id: string;
-  sessionId: string;
-  sequence: number;
-  phase: AgentEvent["phase"];
-  type: AgentEvent["type"];
-  tool?: string;
-  content: string;
-  createdAt: string;
-}
-
-function toAgentEvent(raw: RawLogEntry): AgentEvent {
-  return {
-    id: raw.id,
-    sessionId: raw.sessionId,
-    timestamp: raw.createdAt,
-    phase: raw.phase,
-    type: raw.type,
-    tool: raw.tool,
-    content: raw.content,
-  };
+  logs: ToolResultLog[];
 }
 
 export async function fetchSessionLogs(
@@ -58,8 +34,7 @@ export async function fetchSessionLogs(
     { headers: { Authorization: `Bearer ${token}` } },
   );
   if (!response.ok) {
-    throw new Error("logsService.fetchSessionLogs: request failed");
+    throw new Error("toolResultLogsService.fetchSessionLogs: request failed");
   }
-  const data: { total: number; logs: RawLogEntry[] } = await response.json();
-  return { total: data.total, logs: data.logs.map(toAgentEvent) };
+  return response.json();
 }

@@ -89,24 +89,27 @@ _PHASE_GUIDANCE: dict[Phase, str] = {
     ),
     Phase.ENUMERATION: (
         "Goal: discover web paths, files and confirm software versions.\n"
-        "IMPORTANT: If 'Findings So Far' already shows a successful "
-        "gobuster result for this phase, you MUST respond with "
-        "Action: finish_phase now."
+        "Use gobuster to discover routes and nikto to fingerprint the server.\n"
+        "Do NOT use curl in this phase — route inspection happens in VULN_SCAN.\n"
+        "Only respond with Action: finish_phase when gobuster and nikto "
+        "have both completed successfully."
     ),
     Phase.VULN_SCAN: (
-        "Goal: identify known vulnerabilities and misconfigurations.\n"
-        "IMPORTANT: If 'Findings So Far' already shows a successful nikto "
-        "result for this phase, you MUST respond with Action: finish_phase "
-        "now."
+        "Goal: actively test all discovered paths and services for vulnerabilities.\n"
+        "You may use curl to inspect specific routes before testing them.\n"
+        "You MUST test ALL routes discovered during ENUMERATION before finishing. "
+        "For each discovered path, consider: SQL injection (sqlmap), XSS, "
+        "authentication bypass, and known CVEs.\n"
+        "Do NOT finish_phase after running only one tool. "
+        "Check 'Findings So Far' — if there are discovered paths that have NOT "
+        "been tested for injection or authentication issues, you MUST test them now.\n"
+        "Only respond with Action: finish_phase when ALL discovered routes "
+        "have been tested with at least one vulnerability scanner."
     ),
     Phase.REPORT: (
-        "Goal: review all findings gathered so far, and only then conclude "
-        "the session.\n"
-        "Before finishing, check the findings critically: is there an "
-        "obvious gap (e.g. a discovered path never inspected with curl, "
-        "a service version never checked against known vulnerabilities)? "
-        "If so, you may call one more tool now to fill that gap.\n"
-        "If the findings are already sufficient, you MUST respond with "
+        "Goal: review all findings gathered so far and conclude the session.\n"
+        "Do NOT call any tools in this phase.\n"
+        "If the findings are sufficient, you MUST respond with "
         "Action: finish now, NOT finish_phase."
     ),
 }
@@ -147,6 +150,7 @@ class Planner:
             response = ollama.chat(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
+                options={"num_ctx": 32768},
             )
             # ollama Python client returns an object, not a dict.
             # content can be None if the model returns an empty response.
@@ -180,7 +184,9 @@ class Planner:
         Returns:
             Complete prompt string ready to send to the LLM.
         """
-        tools_section = json.dumps(self.registry.schemas(), indent=2)
+        tools_section = json.dumps(
+            self.registry.schemas_for_phase(state.current_phase), indent=2
+        )
 
         # Explicit completion criteria for the current phase, so the LLM
         # has an objective signal for when to call finish_phase.

@@ -2,11 +2,12 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status, BackgroundTasks
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
+from services.agent_runner import run_agent_process
 
 from config import settings
 from dao.log_es_dao import LogEsDAO
@@ -31,6 +32,7 @@ _SESSION_LOOKUP_RESPONSES: dict[int | str, dict[str, Any]] = {
 class SessionCreateRequest(BaseModel):
     """Request body for `POST /sessions`."""
 
+    name: str = Field(description="User-provided name for the session.")
     target: str = Field(description="Target of the pentest (host, URL, or IP).")
 
 
@@ -97,14 +99,13 @@ def get_log_es_dao() -> LogEsDAO:
 )
 async def create_session(
     body: SessionCreateRequest,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user),
     session_service: SessionService = Depends(get_session_service),
 ) -> SessionResponse:
-    """Create a new agent session for the authenticated user.
-
-    The session starts in `running` status.
-    """
-    session = await session_service.create_session(user_id, body.target)
+    """Create a new agent session and launch the agent in the background."""
+    session = await session_service.create_session(user_id, body.name, body.target)
+    background_tasks.add_task(run_agent_process, session.id, body.target)
     return SessionResponse.model_validate(session)
 
 

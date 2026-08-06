@@ -8,17 +8,29 @@ interface AgentGraphProps {
   events: AgentEvent[];
 }
 
+function firstParamValue(content: string): string {
+  const match = content.match(/=(\S+)/);
+  return match ? match[1] : content;
+}
+
 function nodeLabel(event: AgentEvent): string {
-  if (event.type === "tool_call" && event.tool) return event.tool;
-  if (event.type === "tool_result" && event.tool) return `${event.tool}: resultado`;
-  if (event.type === "phase_change") return "Cambio de fase";
-  if (event.type === "thought") return "Pensamiento";
-  return event.type;
+  if (event.type === "thought") {
+    const words = event.content.trim().split(/\s+/).slice(0, 6);
+    return `${words.join(" ")}...`;
+  }
+  if (event.type === "tool_call") {
+    return `${event.tool ?? "tool"} → ${firstParamValue(event.content)}`;
+  }
+  if (event.type === "phase_change") {
+    const destination = event.content.split(" to ").pop() ?? event.content;
+    return `→ ${destination}`;
+  }
+  return event.content;
 }
 
 const PHASE_VARS: Record<AgentPhase, { text: string; dim: string; border: string }> = {
   RECON:       { text: "var(--ares-green)",  dim: "var(--ares-green-dim)",  border: "var(--ares-green-border)"  },
-  ENUMERATION: { text: "var(--ares-blue)",   dim: "var(--ares-blue-dim)",   border: "var(--ares-blue-border)"   },
+  ENUMERATION: { text: "var(--ares-purple)", dim: "var(--ares-purple-dim)", border: "var(--ares-purple-border)" },
   VULN_SCAN:   { text: "var(--ares-red)",    dim: "var(--ares-red-dim)",    border: "var(--ares-red-border)"    },
   REPORT:      { text: "var(--ares-amber)",  dim: "var(--ares-amber-dim)",  border: "var(--ares-amber-border)"  },
 };
@@ -36,19 +48,19 @@ export function AgentGraph({ events }: AgentGraphProps) {
   const { scale, offset, zoomIn, zoomOut, reset, canZoomIn, canZoomOut, dragHandlers } = useZoomPan();
 
   if (events.length === 0) {
-    return <p style={{ color: "var(--ares-text-dim)", fontSize: 14 }}>No hay logs para esta sesión.</p>;
+    return <p style={{ color: "var(--ares-text-dim)", fontSize: 14 }}>No graph data available yet</p>;
   }
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginBottom: 12 }}>
-        <button onClick={zoomOut} disabled={!canZoomOut} aria-label="Alejar"
+        <button onClick={zoomOut} disabled={!canZoomOut} aria-label="Zoom out"
           style={{ ...btn, width: 32, height: 32, fontSize: 18, opacity: canZoomOut ? 1 : 0.35 }}
         >&minus;</button>
         <button onClick={reset}
           style={{ ...btn, padding: "0 12px", height: 32, fontSize: 12 }}
         >{Math.round(scale * 100)}%</button>
-        <button onClick={zoomIn} disabled={!canZoomIn} aria-label="Acercar"
+        <button onClick={zoomIn} disabled={!canZoomIn} aria-label="Zoom in"
           style={{ ...btn, width: 32, height: 32, fontSize: 18, opacity: canZoomIn ? 1 : 0.35 }}
         >+</button>
       </div>
@@ -91,7 +103,7 @@ export function AgentGraph({ events }: AgentGraphProps) {
                         {nodeLabel(event)}
                       </p>
                       <p style={{ margin: "3px 0 0", fontSize: 11, color: "var(--ares-text-muted)", fontFamily: "JetBrains Mono, monospace" }}>
-                        {new Date(event.timestamp).toLocaleTimeString()}
+                        {new Date(event.createdAt).toLocaleTimeString()}
                       </p>
                     </button>
                   </div>
@@ -125,7 +137,7 @@ export function AgentGraph({ events }: AgentGraphProps) {
         </div>
       </div>
       <p style={{ fontSize: 11, color: "var(--ares-text-dim)", marginTop: 6, fontFamily: "JetBrains Mono, monospace" }}>
-        Arrastra para moverte · Ctrl/Cmd + rueda para zoom
+        Drag to pan · Ctrl/Cmd + scroll to zoom
       </p>
     </div>
   );

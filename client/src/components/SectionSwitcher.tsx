@@ -1,8 +1,8 @@
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 
 const SECTIONS = [
-  { key: "tracking", label: "Seguimiento del agente" },
-  { key: "report",   label: "Reporte" },
+  { key: "tracking", label: "Agent tracking" },
+  { key: "report",   label: "Report" },
 ];
 
 export function SectionSwitcher() {

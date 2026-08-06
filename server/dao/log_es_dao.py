@@ -22,7 +22,6 @@ class LogEsDAO:
         self,
         session_id: str,
         phase: str | None = None,
-        type: str | None = None,
         tool: str | None = None,
         from_dt: str | None = None,
         to_dt: str | None = None,
@@ -34,7 +33,6 @@ class LogEsDAO:
         Args:
             session_id: Filter by session ID (always required).
             phase: Optional filter by phase (exact match, keyword).
-            type: Optional filter by event type (exact match, keyword).
             tool: Optional filter by tool name (exact match, keyword).
             from_dt: Optional ISO datetime string for lower bound on created_at.
             to_dt: Optional ISO datetime string for upper bound on created_at.
@@ -49,8 +47,6 @@ class LogEsDAO:
         filters: list[dict[str, Any]] = [{"term": {"session_id": session_id}}]
         if phase is not None:
             filters.append({"term": {"phase": phase}})
-        if type is not None:
-            filters.append({"term": {"type": type}})
         if tool is not None:
             filters.append({"term": {"tool": tool}})
         if from_dt is not None or to_dt is not None:
@@ -64,7 +60,7 @@ class LogEsDAO:
         result = await self._client.search(
             index=INDEX,
             query={"bool": {"filter": filters}},
-            sort=[{"sequence": "asc"}],
+            sort=[{"created_at": "asc"}],
             from_=offset,
             size=limit,
         )

@@ -4,11 +4,13 @@ import { LogsTable } from "../components/LogsTable";
 
 export function MemoryLogsPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
-  const { events, filters, updateFilter, resetFilters, availableTools } = useMemoryLogs(sessionId ?? "");
+  const { logs, isLoading, filters, updateFilter, resetFilters, availableTools } = useMemoryLogs(sessionId ?? "", false);
 
   return (
     <LogsTable
-      events={events}
+      logs={logs}
+      isLoading={isLoading}
+      isLive={false}
       filters={filters}
       availableTools={availableTools}
       onFilterChange={updateFilter}

@@ -22,14 +22,14 @@ export async function fetchSessionById(token: string, sessionId: string): Promis
   return response.json();
 }
 
-export async function createSession(token: string, target: string): Promise<Session> {
+export async function createSession(token: string, name: string, target: string): Promise<Session> {
   const response = await fetch(`${API_URL}/sessions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ target }),
+    body: JSON.stringify({ name, target }),
   });
   if (!response.ok) {
     throw new Error("sessionsService.createSession: request failed");

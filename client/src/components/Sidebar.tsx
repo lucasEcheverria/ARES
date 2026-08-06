@@ -13,9 +13,9 @@ function dotColor(status: Session["status"]) {
 }
 
 function statusLabel(status: Session["status"]) {
-  if (status === "running") return "En curso";
-  if (status === "failed") return "Fallida";
-  return "Completada";
+  if (status === "running") return "Running";
+  if (status === "failed") return "Failed";
+  return "Completed";
 }
 
 export function Sidebar({ sessions, onDeleteSession }: SidebarProps) {
@@ -23,7 +23,7 @@ export function Sidebar({ sessions, onDeleteSession }: SidebarProps) {
   const { sessionId: activeId } = useParams();
 
   async function handleDelete(session: Session) {
-    if (!confirm(`¿Eliminar la sesión contra "${session.target}"? Esta acción no se puede deshacer.`)) {
+    if (!confirm(`Delete session "${session.name}"? This action cannot be undone.`)) {
       return;
     }
     await onDeleteSession(session.id);
@@ -49,13 +49,13 @@ export function Sidebar({ sessions, onDeleteSession }: SidebarProps) {
             border: "1px solid var(--ares-blue-border)", borderRadius: 6,
             background: "var(--ares-blue-dim)", color: "var(--ares-blue-text)", cursor: "pointer",
           }}
-        >+ Nueva sesión</button>
+        >+ New session</button>
       </div>
 
       <nav style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
         {sessions.length === 0 && (
           <p style={{ padding: "8px 10px", fontSize: 12, color: "var(--ares-text-dim)" }}>
-            No hay sesiones aún
+            No sessions yet
           </p>
         )}
         {sessions.map((session) => {
@@ -82,20 +82,23 @@ export function Sidebar({ sessions, onDeleteSession }: SidebarProps) {
                 <span style={{ width: 7, height: 7, borderRadius: "50%", flexShrink: 0, background: dotColor(session.status) }} />
                 <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                   <span style={{
-                    fontSize: 13, fontWeight: 500, color: "var(--ares-text)", fontFamily: "JetBrains Mono, monospace",
+                    fontSize: 13, fontWeight: 500, color: "var(--ares-text)",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
-                    {session.target}
+                    {session.name}
                   </span>
-                  <span style={{ fontSize: 11, color: "var(--ares-text-muted)" }}>
-                    {statusLabel(session.status)}
+                  <span style={{
+                    fontSize: 11, color: "var(--ares-text-muted)", fontFamily: "JetBrains Mono, monospace",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>
+                    {session.target} · {statusLabel(session.status)}
                   </span>
                 </span>
               </button>
               <button
                 onClick={() => handleDelete(session)}
-                aria-label={`Eliminar sesión ${session.target}`}
-                title="Eliminar sesión"
+                aria-label={`Delete session ${session.name}`}
+                title="Delete session"
                 style={{
                   flexShrink: 0, width: 22, height: 22, marginRight: 6, padding: 0,
                   display: "flex", alignItems: "center", justifyContent: "center",

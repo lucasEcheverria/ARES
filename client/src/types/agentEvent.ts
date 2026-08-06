@@ -1,13 +1,14 @@
 import type { AgentPhase } from "./session";
 
-export type AgentEventType = "thought" | "tool_call" | "tool_result" | "phase_change";
+export type AgentEventType = "thought" | "tool_call" | "phase_change";
 
 export interface AgentEvent {
   id: string;
   sessionId: string;
-  timestamp: string;
+  sequence: number;
   phase: AgentPhase;
   type: AgentEventType;
   tool?: string;
   content: string;
+  createdAt: string;
 }

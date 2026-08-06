@@ -1,7 +1,26 @@
-import type { Report, SessionNotes } from "../types/report";
+import type { ReportFetchResult, SessionNotes } from "../types/report";
 
-export async function fetchReport(_sessionId: string): Promise<Report> {
-  throw new Error("reportsService.fetchReport: backend not implemented yet");
+const API_URL = import.meta.env.VITE_API_URL;
+
+export async function fetchReport(token: string, sessionId: string): Promise<ReportFetchResult> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/sessions/${sessionId}/report`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    return { kind: "error" };
+  }
+
+  if (response.status === 404) {
+    return { kind: "not-found" };
+  }
+  if (!response.ok) {
+    return { kind: "error" };
+  }
+
+  const markdown = await response.text();
+  return { kind: "ready", markdown };
 }
 
 export async function fetchNotes(_sessionId: string): Promise<SessionNotes> {

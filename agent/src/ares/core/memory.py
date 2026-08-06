@@ -77,6 +77,7 @@ class TargetState:
         raw_prompt: Literal user input that initiated the session.
         target: IP or URL extracted from the prompt.
         target_context: Prior knowledge the user has about the target, if any.
+        session_id: Database session ID when launched by the server, None otherwise.
         current_phase: Active pipeline phase.
         global_checklist: Session-wide checklist generated at startup.
         phase_checklist: Phase-specific checklist generated on phase entry.
@@ -88,6 +89,7 @@ class TargetState:
     raw_prompt: str
     target: str
     target_context: str | None
+    session_id: str | None
 
     # PLAN — controlled-mutable, updated as phases progress
     current_phase: Phase

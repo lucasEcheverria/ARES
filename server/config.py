@@ -18,6 +18,12 @@ class Settings(BaseSettings):
         jwt_algorithm: JWT signing algorithm.
         jwt_expire_minutes: JWT expiry in minutes.
         elasticsearch_url: Base URL of the Elasticsearch cluster.
+        ares_es_url: Elasticsearch URL passed to the agent subprocess for logging.
+        ares_db_host: MariaDB host passed to the agent subprocess for graph event logging.
+        ares_db_port: MariaDB port passed to the agent subprocess for graph event logging.
+        ares_db_user: MariaDB user passed to the agent subprocess for graph event logging.
+        ares_db_password: MariaDB password passed to the agent subprocess for graph event logging.
+        ares_db_sessions: Name of the `ares_sessions` database, passed to the agent subprocess.
     """
 
     db_host: str
@@ -34,6 +40,17 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 10080
 
     elasticsearch_url: str
+    ares_es_url: str
+
+    ares_db_host: str
+    ares_db_port: int
+    ares_db_user: str
+    ares_db_password: str
+    ares_db_sessions: str
+
+    agent_path: str
+
+    reports_dir: str
 
     model_config = SettingsConfigDict(env_file=".env")
 

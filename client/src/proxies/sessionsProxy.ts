@@ -19,3 +19,9 @@ export async function deleteSession(id: string): Promise<void> {
   if (!token) return;
   return sessionsService.deleteSession(token, id);
 }
+
+export async function createSession(name: string, target: string): Promise<Session | undefined> {
+  const token = getToken();
+  if (!token) return undefined;
+  return sessionsService.createSession(token, name, target);
+}

@@ -3,13 +3,15 @@ import { Sidebar } from "../components/Sidebar";
 import { SectionSwitcher } from "../components/SectionSwitcher";
 import { BottomNav } from "../components/BottomNav";
 import type { Session } from "../types/session";
+import type { AppOutletContext } from "../types/outletContext";
 
 interface AppLayoutProps {
   sessions: Session[];
   onDeleteSession: (id: string) => Promise<void>;
+  onRefetchSessions: () => void;
 }
 
-export function AppLayout({ sessions, onDeleteSession }: AppLayoutProps) {
+export function AppLayout({ sessions, onDeleteSession, onRefetchSessions }: AppLayoutProps) {
   const { sessionId } = useParams();
 
   return (
@@ -25,7 +27,7 @@ export function AppLayout({ sessions, onDeleteSession }: AppLayoutProps) {
           </div>
         )}
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
-          <Outlet />
+          <Outlet context={{ refetchSessions: onRefetchSessions } satisfies AppOutletContext} />
         </div>
         <div className="md:hidden">
           <BottomNav />
