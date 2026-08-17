@@ -38,7 +38,7 @@ export function ReportPage() {
                 Report not available yet.
               </p>
             ) : (
-              <p style={{ color: "var(--ares-red)", fontSize: 14, margin: 0 }}>
+              <p style={{ color: "var(--ares-red-text)", fontSize: 14, margin: 0 }}>
                 Failed to load the report. Please try again later.
               </p>
             )}

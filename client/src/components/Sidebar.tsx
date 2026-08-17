@@ -9,7 +9,7 @@ interface SidebarProps {
 function dotColor(status: Session["status"]) {
   if (status === "running") return "var(--ares-blue)";
   if (status === "failed") return "var(--ares-red)";
-  return "var(--ares-border-strong)";
+  return "var(--ares-green)";
 }
 
 function statusLabel(status: Session["status"]) {
@@ -38,7 +38,7 @@ export function Sidebar({ sessions, onDeleteSession }: SidebarProps) {
       background: "var(--ares-surface)", borderRight: "1px solid var(--ares-border)",
     }}>
       <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--ares-border)" }}>
-        <span style={{ fontSize: 15, fontWeight: 600, color: "var(--ares-blue)" }}>ARES</span>
+        <span style={{ fontSize: 15, fontWeight: 600, color: "var(--ares-blue-text)" }}>ARES</span>
       </div>
 
       <div style={{ padding: "10px 12px" }}>
@@ -67,8 +67,11 @@ export function Sidebar({ sessions, onDeleteSession }: SidebarProps) {
                 display: "flex", alignItems: "center", gap: 4,
                 borderRadius: 6, marginBottom: 2,
                 border: "1px solid transparent",
+                borderLeft: `3px solid ${dotColor(session.status)}`,
                 background: isActive ? "var(--ares-blue-dim)" : "transparent",
-                borderColor: isActive ? "var(--ares-blue-border)" : "transparent",
+                borderTopColor: isActive ? "var(--ares-blue-border)" : "transparent",
+                borderRightColor: isActive ? "var(--ares-blue-border)" : "transparent",
+                borderBottomColor: isActive ? "var(--ares-blue-border)" : "transparent",
               }}
             >
               <button

@@ -37,7 +37,7 @@ function FilterField({ label, children }: { label: string; children: ReactNode }
 function phaseColors(phase: string) {
   return {
     background: phase === "RECON" ? "var(--ares-green-dim)" : phase === "ENUMERATION" ? "var(--ares-blue-dim)" : phase === "VULN_SCAN" ? "var(--ares-red-dim)" : "var(--ares-amber-dim)",
-    color: phase === "RECON" ? "var(--ares-green)" : phase === "ENUMERATION" ? "var(--ares-blue-text)" : phase === "VULN_SCAN" ? "var(--ares-red)" : "var(--ares-amber)",
+    color: phase === "RECON" ? "var(--ares-green-text)" : phase === "ENUMERATION" ? "var(--ares-blue-text)" : phase === "VULN_SCAN" ? "var(--ares-red-text)" : "var(--ares-amber-text)",
   };
 }
 
@@ -52,7 +52,7 @@ export function LogsTable({ logs, isLoading, isLive, filters, availableTools, on
       {isLive && (
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
           <span className="ares-live-dot" />
-          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--ares-green)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--ares-green-text)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Live
           </span>
         </div>
@@ -79,7 +79,7 @@ export function LogsTable({ logs, isLoading, isLive, filters, availableTools, on
         </div>
         {hasActive && (
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-            <button onClick={onReset} style={{ fontSize: 12, color: "var(--ares-blue)", background: "none", border: "none", cursor: "pointer" }}>
+            <button onClick={onReset} style={{ fontSize: 12, color: "var(--ares-blue-text)", background: "none", border: "none", cursor: "pointer" }}>
               Clear filters
             </button>
           </div>
@@ -127,7 +127,7 @@ export function LogsTable({ logs, isLoading, isLive, filters, availableTools, on
                         </span>
                       </td>
                       <td style={{ padding: "9px 12px", color: "var(--ares-text-muted)", fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{log.tool}</td>
-                      <td style={{ padding: "9px 12px", fontFamily: "JetBrains Mono, monospace", fontSize: 12, color: log.exitCode === 0 ? "var(--ares-green)" : "var(--ares-red)" }}>
+                      <td style={{ padding: "9px 12px", fontFamily: "JetBrains Mono, monospace", fontSize: 12, fontWeight: 600, color: log.exitCode === 0 ? "var(--ares-green-text)" : "var(--ares-red-text)" }}>
                         {log.exitCode}
                       </td>
                       <td style={{ padding: "9px 12px", color: "var(--ares-text)", fontFamily: "JetBrains Mono, monospace", fontSize: 12, whiteSpace: "pre-wrap" }}>
