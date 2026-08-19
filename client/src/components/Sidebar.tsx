@@ -12,6 +12,12 @@ function dotColor(status: Session["status"]) {
   return "var(--ares-green)";
 }
 
+function dimColor(status: Session["status"]) {
+  if (status === "running") return "var(--ares-blue-dim)";
+  if (status === "failed") return "var(--ares-red-dim)";
+  return "var(--ares-green-dim)";
+}
+
 function statusLabel(status: Session["status"]) {
   if (status === "running") return "Running";
   if (status === "failed") return "Failed";
@@ -66,12 +72,8 @@ export function Sidebar({ sessions, onDeleteSession }: SidebarProps) {
               style={{
                 display: "flex", alignItems: "center", gap: 4,
                 borderRadius: 6, marginBottom: 2,
-                border: "1px solid transparent",
-                borderLeft: `3px solid ${dotColor(session.status)}`,
-                background: isActive ? "var(--ares-blue-dim)" : "transparent",
-                borderTopColor: isActive ? "var(--ares-blue-border)" : "transparent",
-                borderRightColor: isActive ? "var(--ares-blue-border)" : "transparent",
-                borderBottomColor: isActive ? "var(--ares-blue-border)" : "transparent",
+                background: dimColor(session.status),
+                boxShadow: isActive ? "0 0 0 2px var(--ares-blue-border) inset" : "none",
               }}
             >
               <button

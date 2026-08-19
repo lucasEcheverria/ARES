@@ -91,12 +91,12 @@ export function AgentGraph({ events }: AgentGraphProps) {
                       onClick={() => setExpandedId(isExpanded ? null : event.id)}
                       onMouseDown={(e) => e.stopPropagation()}
                       style={{
-                        minWidth: 148, padding: "10px 14px 10px 12px", textAlign: "left",
-                        border: `1px solid ${isExpanded ? phase.border : "var(--ares-border)"}`,
-                        borderLeft: `3px solid ${phase.border}`,
-                        background: isExpanded ? phase.dim : "var(--ares-surface)",
+                        minWidth: 148, padding: "10px 14px", textAlign: "left",
+                        border: `1px solid ${phase.border}`,
+                        background: phase.dim,
+                        boxShadow: isExpanded ? `0 0 0 2px ${phase.border}` : "none",
                         borderRadius: 8, cursor: "pointer",
-                        transition: "border-color 0.15s, background 0.15s",
+                        transition: "box-shadow 0.15s, background 0.15s",
                         display: "block",
                       }}
                     >
@@ -116,7 +116,7 @@ export function AgentGraph({ events }: AgentGraphProps) {
                       style={{
                         marginTop: 6, padding: 12, maxWidth: 260,
                         border: `1px solid ${phase.border}`,
-                        background: "var(--ares-surface)", borderRadius: 8,
+                        background: phase.dim, borderRadius: 8,
                       }}
                     >
                       <p style={{ margin: "0 0 6px", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: phase.text, fontFamily: "JetBrains Mono, monospace" }}>

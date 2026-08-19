@@ -112,11 +112,17 @@ export function LogsTable({ logs, isLoading, isLive, filters, availableTools, on
               logs.map((log) => {
                 const isExpanded = expandedId === log.id;
                 const colors = phaseColors(log.phase);
+                const failed = log.exitCode !== 0;
+                const rowBg = failed ? "var(--ares-red-dim)" : "transparent";
                 return (
                   <Fragment key={log.id}>
                     <tr
                       onClick={() => setExpandedId(isExpanded ? null : log.id)}
-                      style={{ borderBottom: "1px solid var(--ares-border)", cursor: "pointer" }}
+                      style={{
+                        borderBottom: `1px solid ${failed ? "var(--ares-red-border)" : "var(--ares-border)"}`,
+                        cursor: "pointer",
+                        background: rowBg,
+                      }}
                     >
                       <td style={{ padding: "9px 12px", color: "var(--ares-text-muted)", whiteSpace: "nowrap", fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>
                         {new Date(log.createdAt).toLocaleString()}
@@ -135,7 +141,10 @@ export function LogsTable({ logs, isLoading, isLive, filters, availableTools, on
                       </td>
                     </tr>
                     {isExpanded && (
-                      <tr style={{ borderBottom: "1px solid var(--ares-border)", background: "var(--ares-surface-raised)" }}>
+                      <tr style={{
+                        borderBottom: `1px solid ${failed ? "var(--ares-red-border)" : "var(--ares-border)"}`,
+                        background: failed ? "var(--ares-red-dim)" : "var(--ares-surface-raised)",
+                      }}>
                         <td colSpan={TABLE_COLUMNS.length} style={{ padding: "12px 16px" }}>
                           <div style={{ marginBottom: 10 }}>
                             <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 600, color: "var(--ares-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Output</p>
