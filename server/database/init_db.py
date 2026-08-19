@@ -35,6 +35,12 @@ ARES_LOGS_NEW_FIELDS = {
         "exit_code": {"type": "integer"},
         "lines": {"type": "text"},
         "metadata": {"type": "object", "enabled": True},
+        "embedding": {
+            "type": "dense_vector",
+            "dims": 768,
+            "similarity": "cosine",
+            "index": True,
+        },
     }
 }
 

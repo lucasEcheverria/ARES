@@ -8,6 +8,7 @@ from pathlib import Path
 from config import settings
 from dao.session_dao import SessionDAO
 from database.connection import AsyncSessionSessions
+from services.rag_indexing_service import index_session_embeddings
 
 
 def _launch_agent(target: str, session_id: str) -> int:
@@ -61,3 +62,6 @@ async def run_agent_process(session_id: str, target: str) -> None:
         await dao.update_status(session_id, status)
         if report_path:
             await dao.update_report_path(session_id, report_path)
+
+    if status == "completed":
+        await index_session_embeddings(session_id)
