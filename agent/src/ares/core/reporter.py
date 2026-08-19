@@ -121,6 +121,7 @@ class Reporter:
                 options={"num_ctx": 32768},
             )
             body = self._strip_reasoning(response.message.content or "")
+            body = self._strip_code_fence(body)
             if body:
                 return f"{self._build_header(state)}\n\n{body}"
         except Exception as e:
@@ -138,6 +139,24 @@ class Reporter:
             Text with any <think>...</think> block removed, stripped.
         """
         return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
+    def _strip_code_fence(self, text: str) -> str:
+        """Unwrap a single Markdown code fence wrapping the whole report.
+
+        Some models return the requested Markdown document itself wrapped
+        in a ```markdown ... ``` fence, as if presenting a code snippet.
+        Saved verbatim, that fence makes the entire report render as one
+        preformatted block instead of real headings and lists.
+
+        Args:
+            text: Report body after `<think>` removal.
+
+        Returns:
+            Text with a single outer fence removed, if the whole body was
+            wrapped in one; otherwise unchanged.
+        """
+        match = re.match(r"^```(?:markdown|md)?\s*\n(.*)\n```\s*$", text, re.DOTALL)
+        return match.group(1).strip() if match else text
 
     def _build_header(self, state: TargetState) -> str:
         """Build the report title and target section.
