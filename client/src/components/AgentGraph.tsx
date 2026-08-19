@@ -28,7 +28,7 @@ function nodeLabel(event: AgentEvent): string {
   return event.content;
 }
 
-const PHASE_VARS: Record<AgentPhase, { text: string; dim: string; border: string }> = {
+export const PHASE_VARS: Record<AgentPhase, { text: string; dim: string; border: string }> = {
   RECON:       { text: "var(--ares-green-text)", dim: "var(--ares-green-dim)", border: "var(--ares-green)" },
   ENUMERATION: { text: "var(--ares-blue-text)",  dim: "var(--ares-blue-dim)",  border: "var(--ares-blue)"  },
   VULN_SCAN:   { text: "var(--ares-red-text)",   dim: "var(--ares-red-dim)",   border: "var(--ares-red)"   },
