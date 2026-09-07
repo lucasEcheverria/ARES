@@ -1,11 +1,33 @@
-"""Pydantic response schemas for session endpoints."""
+"""Pydantic request/response schemas for session endpoints."""
 
 import datetime
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
-from models.session import SessionStatus
+from models.session import HostStatus, SessionStatus
+
+
+class SessionCreateSingleRequest(BaseModel):
+    """Request body for `POST /sessions` with `mode="single"` (unchanged behavior)."""
+
+    mode: Literal["single"]
+    name: str = Field(description="User-provided name for the session.")
+    target: str = Field(description="Target of the pentest (host, URL, or IP).")
+
+
+class SessionCreateSubnetRequest(BaseModel):
+    """Request body for `POST /sessions` with `mode="subnet"`."""
+
+    mode: Literal["subnet"]
+    name: str = Field(description="User-provided name for the macrosession.")
+    cidr: str = Field(description="Subnet in CIDR notation, /24 mask or narrower.")
+
+
+SessionCreateRequest = Annotated[
+    SessionCreateSingleRequest | SessionCreateSubnetRequest, Field(discriminator="mode")
+]
 
 
 class SessionResponse(BaseModel):
@@ -23,5 +45,31 @@ class SessionResponse(BaseModel):
     report_path: str | None = Field(
         description="Path to the generated Markdown report, set on completion."
     )
+    parent_session_id: str | None = Field(
+        default=None, description="Macrosession this row belongs to as a discovered child."
+    )
+    host_status: HostStatus | None = Field(
+        default=None, description="Lifecycle status of this child within its macrosession's run."
+    )
+    failure_reason: str | None = Field(
+        default=None, description="Captured exception message if `host_status` is `failed`."
+    )
+    device_type: str | None = Field(
+        default=None, description="Result of discovery classification, or `unknown`."
+    )
+    discovery_metadata: dict[str, Any] | None = Field(
+        default=None, description="IP, MAC, announced service types, and response port."
+    )
     created_at: datetime.datetime = Field(description="Timestamp of session creation.")
     updated_at: datetime.datetime = Field(description="Timestamp of the most recent update.")
+
+
+class MacrosessionResponse(SessionResponse):
+    """A macrosession as returned by the API, with its discovered children inlined."""
+
+    children: list[SessionResponse] = Field(
+        default_factory=list, description="Child sessions discovered on this subnet."
+    )
+    host_status_summary: dict[str, int] = Field(
+        default_factory=dict, description="Count of children per `host_status` value."
+    )

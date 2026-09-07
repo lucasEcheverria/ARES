@@ -2,8 +2,9 @@
 
 import datetime
 import enum
+from typing import Any
 
-from sqlalchemy import DateTime, Enum, Index, String, Text, func, text
+from sqlalchemy import JSON, DateTime, Enum, ForeignKey, Index, String, Text, func, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -19,6 +20,15 @@ class SessionStatus(enum.StrEnum):
     FAILED = "failed"
 
 
+class HostStatus(enum.StrEnum):
+    """Lifecycle status of a macrosession's child (per-host) session."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETE = "complete"
+    FAILED = "failed"
+
+
 class Session(SessionsBase):
     """An autonomous pentesting session run by the agent.
 
@@ -29,12 +39,26 @@ class Session(SessionsBase):
         target: The target of the pentest (host, URL, or IP).
         status: Current lifecycle status of the session.
         report_path: Path to the generated Markdown report, set on completion.
+        parent_session_id: References the macrosession this row belongs to as a
+            discovered child. `NULL` for an individual (single-target) session
+            or for the macrosession row itself.
+        host_status: Lifecycle status of this child within its macrosession's
+            sequential run. `NULL` for individual sessions and macrosessions.
+        failure_reason: Captured exception message if `host_status` is `failed`.
+        device_type: Result of service-type classification during discovery.
+            `NULL`/`"unknown"` if it could not be classified.
+        discovery_metadata: IP, MAC (if available), announced service types, and
+            response port captured during discovery. `NULL` for non-discovered
+            sessions.
         created_at: Timestamp of session creation.
         updated_at: Timestamp of the most recent update.
     """
 
     __tablename__ = "sessions"
-    __table_args__ = (Index("idx_user_id", "user_id"),)
+    __table_args__ = (
+        Index("idx_user_id", "user_id"),
+        Index("idx_parent_session_id", "parent_session_id"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     user_id: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -46,6 +70,15 @@ class Session(SessionsBase):
         default=SessionStatus.RUNNING,
     )
     report_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    parent_session_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=True
+    )
+    host_status: Mapped[HostStatus | None] = mapped_column(
+        Enum(HostStatus, values_callable=lambda e: [m.value for m in e]), nullable=True
+    )
+    failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    device_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    discovery_metadata: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP")
     )

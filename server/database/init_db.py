@@ -2,7 +2,9 @@
 
 import logging
 
+from config import settings
 from database.connection import engine_config, engine_sessions, es_client
+from database.migrations import run_sessions_migrations
 
 # Importing models.event registers Event on SessionsBase.metadata as a side effect.
 from models import event as _event  # noqa: F401
@@ -58,6 +60,9 @@ async def init_db() -> None:
         "ares_sessions tables checked/created: %s",
         list(SessionsBase.metadata.tables.keys()),
     )
+
+    await run_sessions_migrations(engine_sessions, settings.db_sessions)
+    logger.info("ares_sessions.sessions columns/constraints checked/migrated")
 
     if not await es_client.indices.exists(index=ARES_LOGS_INDEX):
         await es_client.indices.create(index=ARES_LOGS_INDEX, body=ARES_LOGS_MAPPING)

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Session } from "../types/session";
-import { getSessions, deleteSession as deleteSessionProxy } from "../proxies/sessionsProxy";
+import type { Macrosession, Session } from "../types/session";
+import { getSessions, getMacrosessionsList, deleteSession as deleteSessionProxy } from "../proxies/sessionsProxy";
 
 export function useSessionList(isAuthenticated: boolean) {
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [individualSessions, setIndividualSessions] = useState<Session[]>([]);
+  const [macrosessions, setMacrosessions] = useState<Macrosession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const isMountedRef = useRef(true);
 
@@ -16,15 +17,20 @@ export function useSessionList(isAuthenticated: boolean) {
 
   const refetch = useCallback(async () => {
     if (!isAuthenticated) {
-      setSessions([]);
+      setIndividualSessions([]);
+      setMacrosessions([]);
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
-    const data = await getSessions();
+    const [individual, macro] = await Promise.all([
+      getSessions("individual"),
+      getMacrosessionsList(),
+    ]);
     if (isMountedRef.current) {
-      setSessions(data);
+      setIndividualSessions(individual);
+      setMacrosessions(macro);
       setIsLoading(false);
     }
   }, [isAuthenticated]);
@@ -35,8 +41,9 @@ export function useSessionList(isAuthenticated: boolean) {
 
   async function deleteSession(id: string) {
     await deleteSessionProxy(id);
-    setSessions((current) => current.filter((session) => session.id !== id));
+    setIndividualSessions((current) => current.filter((session) => session.id !== id));
+    setMacrosessions((current) => current.filter((session) => session.id !== id));
   }
 
-  return { sessions, isLoading, refetch, deleteSession };
+  return { individualSessions, macrosessions, isLoading, refetch, deleteSession };
 }

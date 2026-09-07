@@ -1,27 +1,29 @@
-import { Outlet, useParams } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "../components/Sidebar";
 import { SectionSwitcher } from "../components/SectionSwitcher";
 import { BottomNav } from "../components/BottomNav";
-import type { Session } from "../types/session";
+import type { Macrosession, Session } from "../types/session";
 import type { AppOutletContext } from "../types/outletContext";
 
 interface AppLayoutProps {
-  sessions: Session[];
+  individualSessions: Session[];
+  macrosessions: Macrosession[];
   onDeleteSession: (id: string) => Promise<void>;
   onRefetchSessions: () => void;
 }
 
-export function AppLayout({ sessions, onDeleteSession, onRefetchSessions }: AppLayoutProps) {
-  const { sessionId } = useParams();
+export function AppLayout({ individualSessions, macrosessions, onDeleteSession, onRefetchSessions }: AppLayoutProps) {
+  const location = useLocation();
+  const showSectionSwitcher = /^\/session\/[^/]+\/(tracking|report)$/.test(location.pathname);
 
   return (
     <div style={{ display: "flex", height: "100vh", background: "var(--ares-bg)" }}>
       <div className="hidden md:block">
-        <Sidebar sessions={sessions} onDeleteSession={onDeleteSession} />
+        <Sidebar individualSessions={individualSessions} macrosessions={macrosessions} onDeleteSession={onDeleteSession} />
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {sessionId && (
+        {showSectionSwitcher && (
           <div className="hidden md:block" style={{ padding: "20px 24px 0" }}>
             <SectionSwitcher />
           </div>

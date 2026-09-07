@@ -1,19 +1,19 @@
 """Session management endpoints."""
 
-from typing import Any
+from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.agent_runner import run_agent_process
 
 from config import settings
 from dao.log_es_dao import LogEsDAO
 from dao.session_dao import SessionDAO
 from database.connection import es_client, get_sessions_db
-from schemas.session import SessionResponse
+from schemas.session import MacrosessionResponse, SessionCreateRequest, SessionResponse
+from services.agent_runner import run_agent_process
+from services.macrosession_runner import run_macrosession
 from services.session_service import SessionService
 
 router = APIRouter()
@@ -27,13 +27,6 @@ _SESSION_LOOKUP_RESPONSES: dict[int | str, dict[str, Any]] = {
     403: {"description": "Session belongs to a different user"},
     404: {"description": "Session not found"},
 }
-
-
-class SessionCreateRequest(BaseModel):
-    """Request body for `POST /sessions`."""
-
-    name: str = Field(description="User-provided name for the session.")
-    target: str = Field(description="Target of the pentest (host, URL, or IP).")
 
 
 async def get_current_user(
@@ -93,7 +86,7 @@ def get_log_es_dao() -> LogEsDAO:
 
 @router.post(
     "",
-    response_model=SessionResponse,
+    response_model=MacrosessionResponse | SessionResponse,
     summary="Create a session",
     responses=_UNAUTHORIZED_RESPONSE,
 )
@@ -102,31 +95,72 @@ async def create_session(
     background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user),
     session_service: SessionService = Depends(get_session_service),
-) -> SessionResponse:
-    """Create a new agent session and launch the agent in the background."""
-    session = await session_service.create_session(user_id, body.name, body.target)
-    background_tasks.add_task(run_agent_process, session.id, body.target)
-    return SessionResponse.model_validate(session)
+) -> SessionResponse | MacrosessionResponse:
+    """Create a new session and launch its agent run(s) in the background.
+
+    `mode="single"` behaves exactly as before. `mode="subnet"` runs phase-1
+    discovery synchronously (so the response already includes the discovered
+    children), then schedules phase-2 (the sequential agent run against every
+    child) as a background task.
+    """
+    if body.mode == "single":
+        session = await session_service.create_session(user_id, body.name, body.target)
+        background_tasks.add_task(run_agent_process, session.id, body.target)
+        return SessionResponse.model_validate(session)
+
+    macrosession, children = await session_service.create_subnet_macrosession(
+        user_id, body.name, body.cidr
+    )
+    background_tasks.add_task(run_macrosession, macrosession.id)
+    return MacrosessionResponse.model_validate(macrosession).model_copy(
+        update={"children": [SessionResponse.model_validate(c) for c in children]}
+    )
 
 
 @router.get(
     "",
-    response_model=list[SessionResponse],
+    response_model=list[MacrosessionResponse | SessionResponse],
     summary="List sessions",
     responses=_UNAUTHORIZED_RESPONSE,
 )
 async def list_sessions(
+    type: Literal["individual", "macro"] | None = Query(
+        default=None, description="Filter to individual sessions or macrosessions only."
+    ),
     user_id: str = Depends(get_current_user),
     session_service: SessionService = Depends(get_session_service),
-) -> list[SessionResponse]:
-    """List all sessions belonging to the authenticated user, most recent first."""
+) -> list[MacrosessionResponse | SessionResponse]:
+    """List sessions belonging to the authenticated user, most recent first.
+
+    Without `type`, returns every session (unchanged behavior). With
+    `type=individual`, excludes macrosessions and their children. With
+    `type=macro`, returns only macrosessions, each with `host_status_summary`
+    inlined for the sidebar's progress display (`children` is left empty here
+    — only `GET /sessions/{id}` inlines the full child list).
+    """
+    if type == "individual":
+        sessions = await session_service.get_individual_sessions(user_id)
+        return [SessionResponse.model_validate(s) for s in sessions]
+
+    if type == "macro":
+        macrosessions = await session_service.get_macrosessions(user_id)
+        result: list[MacrosessionResponse | SessionResponse] = []
+        for macrosession in macrosessions:
+            summary = await session_service.get_host_status_summary(macrosession.id)
+            result.append(
+                MacrosessionResponse.model_validate(macrosession).model_copy(
+                    update={"host_status_summary": summary}
+                )
+            )
+        return result
+
     sessions = await session_service.get_user_sessions(user_id)
     return [SessionResponse.model_validate(s) for s in sessions]
 
 
 @router.get(
     "/{session_id}",
-    response_model=SessionResponse,
+    response_model=MacrosessionResponse | SessionResponse,
     summary="Get a session",
     responses=_SESSION_LOOKUP_RESPONSES,
 )
@@ -134,10 +168,25 @@ async def get_session(
     session_id: str = Path(..., description="The session's UUID."),
     user_id: str = Depends(get_current_user),
     session_service: SessionService = Depends(get_session_service),
-) -> SessionResponse:
-    """Fetch a single session owned by the authenticated user."""
+) -> SessionResponse | MacrosessionResponse:
+    """Fetch a single session owned by the authenticated user.
+
+    If the session has discovered children, it is a macrosession: the
+    response inlines `children` and `host_status_summary`. Otherwise it is
+    returned exactly as an individual session always has been.
+    """
     session = await session_service.get_session(session_id, user_id)
-    return SessionResponse.model_validate(session)
+    children = await session_service.get_children(session_id)
+    if not children:
+        return SessionResponse.model_validate(session)
+
+    summary = await session_service.get_host_status_summary(session_id)
+    return MacrosessionResponse.model_validate(session).model_copy(
+        update={
+            "children": [SessionResponse.model_validate(c) for c in children],
+            "host_status_summary": summary,
+        }
+    )
 
 
 @router.delete(
