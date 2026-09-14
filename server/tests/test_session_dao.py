@@ -89,3 +89,70 @@ async def test_delete_missing_session_is_a_noop(sessions_db: AsyncSession) -> No
     dao = SessionDAO(sessions_db)
 
     await dao.delete(str(uuid.uuid4()))  # does not raise
+
+
+async def test_get_children_returns_only_that_parents_children_in_creation_order(
+    sessions_db: AsyncSession,
+) -> None:
+    dao = SessionDAO(sessions_db)
+    macro = await dao.create(_session_data())
+    other_macro = await dao.create(_session_data())
+    child1 = await dao.create(_session_data(parent_session_id=macro.id, host_status="pending"))
+    child2 = await dao.create(_session_data(parent_session_id=macro.id, host_status="pending"))
+    await dao.create(_session_data(parent_session_id=other_macro.id, host_status="pending"))
+
+    children = await dao.get_children(macro.id)
+
+    assert [c.id for c in children] == [child1.id, child2.id]
+
+
+async def test_update_host_status_sets_status_and_failure_reason(sessions_db: AsyncSession) -> None:
+    dao = SessionDAO(sessions_db)
+    child = await dao.create(_session_data(host_status="pending"))
+
+    await dao.update_host_status(child.id, "failed", failure_reason="exception: boom")
+
+    updated = await dao.get_by_id(child.id)
+    assert updated is not None
+    assert updated.host_status == "failed"
+    assert updated.failure_reason == "exception: boom"
+
+
+async def test_get_host_status_summary_counts_by_status(sessions_db: AsyncSession) -> None:
+    dao = SessionDAO(sessions_db)
+    macro = await dao.create(_session_data())
+    await dao.create(_session_data(parent_session_id=macro.id, host_status="complete"))
+    await dao.create(_session_data(parent_session_id=macro.id, host_status="complete"))
+    await dao.create(_session_data(parent_session_id=macro.id, host_status="failed"))
+
+    summary = await dao.get_host_status_summary(macro.id)
+
+    assert summary == {"complete": 2, "failed": 1}
+
+
+async def test_get_individual_sessions_excludes_children_and_macrosessions(
+    sessions_db: AsyncSession,
+) -> None:
+    dao = SessionDAO(sessions_db)
+    individual = await dao.create(_session_data(user_id="user-1"))
+    macro = await dao.create(_session_data(user_id="user-1"))
+    await dao.create(
+        _session_data(user_id="user-1", parent_session_id=macro.id, host_status="pending")
+    )
+
+    individuals = await dao.get_individual_sessions("user-1")
+
+    assert [s.id for s in individuals] == [individual.id]
+
+
+async def test_get_macrosessions_returns_only_referenced_parents(sessions_db: AsyncSession) -> None:
+    dao = SessionDAO(sessions_db)
+    await dao.create(_session_data(user_id="user-1"))
+    macro = await dao.create(_session_data(user_id="user-1"))
+    await dao.create(
+        _session_data(user_id="user-1", parent_session_id=macro.id, host_status="pending")
+    )
+
+    macrosessions = await dao.get_macrosessions("user-1")
+
+    assert [s.id for s in macrosessions] == [macro.id]

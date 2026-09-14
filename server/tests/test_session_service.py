@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi import HTTPException
 
+import services.session_service as session_service_module
 from models.session import Session, SessionStatus
 from services.session_service import SessionService
 
@@ -114,3 +115,89 @@ async def test_delete_session_raises_403_for_other_users_session(session_dao: As
 
     assert exc_info.value.status_code == 403
     session_dao.delete.assert_not_awaited()
+
+
+async def test_create_subnet_macrosession_delegates_to_discovery_orchestrator(
+    session_dao: AsyncMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    macro = Session(
+        id="macro-1", user_id="user-1", target="192.168.1.0/24", status=SessionStatus.RUNNING
+    )
+    fake_orchestrator = AsyncMock(return_value=(macro, []))
+    monkeypatch.setattr(
+        session_service_module, "discover_and_create_macrosession", fake_orchestrator
+    )
+    service = SessionService(session_dao)
+
+    result = await service.create_subnet_macrosession("user-1", "Home subnet", "192.168.1.0/24")
+
+    assert result == (macro, [])
+    fake_orchestrator.assert_awaited_once_with(
+        session_dao, "user-1", "Home subnet", "192.168.1.0/24"
+    )
+
+
+@pytest.mark.parametrize("cidr", ["not-a-cidr", "192.168.0.0/23", "10.0.0.0/16"])
+async def test_create_subnet_macrosession_rejects_invalid_or_too_wide_cidr(
+    session_dao: AsyncMock, cidr: str
+) -> None:
+    service = SessionService(session_dao)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await service.create_subnet_macrosession("user-1", "Home subnet", cidr)
+
+    assert exc_info.value.status_code == 400
+
+
+@pytest.mark.parametrize("cidr", ["192.168.1.0/24", "10.0.0.0/28"])
+async def test_create_subnet_macrosession_accepts_slash_24_or_narrower(
+    session_dao: AsyncMock, monkeypatch: pytest.MonkeyPatch, cidr: str
+) -> None:
+    macro = Session(id="macro-1", user_id="user-1", target=cidr, status=SessionStatus.RUNNING)
+    fake_orchestrator = AsyncMock(return_value=(macro, []))
+    monkeypatch.setattr(
+        session_service_module, "discover_and_create_macrosession", fake_orchestrator
+    )
+    service = SessionService(session_dao)
+
+    await service.create_subnet_macrosession("user-1", "Home subnet", cidr)  # does not raise
+
+
+async def test_get_individual_sessions_delegates_to_dao(session_dao: AsyncMock) -> None:
+    session_dao.get_individual_sessions.return_value = []
+    service = SessionService(session_dao)
+
+    result = await service.get_individual_sessions("user-1")
+
+    session_dao.get_individual_sessions.assert_awaited_once_with("user-1")
+    assert result == []
+
+
+async def test_get_macrosessions_delegates_to_dao(session_dao: AsyncMock) -> None:
+    session_dao.get_macrosessions.return_value = []
+    service = SessionService(session_dao)
+
+    result = await service.get_macrosessions("user-1")
+
+    session_dao.get_macrosessions.assert_awaited_once_with("user-1")
+    assert result == []
+
+
+async def test_get_children_delegates_to_dao(session_dao: AsyncMock) -> None:
+    session_dao.get_children.return_value = []
+    service = SessionService(session_dao)
+
+    result = await service.get_children("macro-1")
+
+    session_dao.get_children.assert_awaited_once_with("macro-1")
+    assert result == []
+
+
+async def test_get_host_status_summary_delegates_to_dao(session_dao: AsyncMock) -> None:
+    session_dao.get_host_status_summary.return_value = {"complete": 1}
+    service = SessionService(session_dao)
+
+    result = await service.get_host_status_summary("macro-1")
+
+    session_dao.get_host_status_summary.assert_awaited_once_with("macro-1")
+    assert result == {"complete": 1}

@@ -6,10 +6,11 @@ import { LoginPage } from "./pages/LoginPage";
 import { NewSessionPage } from "./pages/NewSessionPage";
 import { AgentTrackingPage } from "./pages/AgentTrackingPage";
 import { ReportPage } from "./pages/ReportPage";
+import { MacrosessionTopologyPage } from "./pages/MacrosessionTopologyPage";
 
 function App() {
   const { isAuthenticated, loginWithGoogle } = useAuth();
-  const { sessions, deleteSession, refetch: refetchSessions } = useSessionList(isAuthenticated);
+  const { individualSessions, macrosessions, deleteSession, refetch: refetchSessions } = useSessionList(isAuthenticated);
 
   if (!isAuthenticated) {
     return (
@@ -24,11 +25,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<AppLayout sessions={sessions} onDeleteSession={deleteSession} onRefetchSessions={refetchSessions} />}>
+        <Route path="/" element={<AppLayout individualSessions={individualSessions} macrosessions={macrosessions} onDeleteSession={deleteSession} onRefetchSessions={refetchSessions} />}>
           <Route index element={<Navigate to="/new-session" replace />} />
           <Route path="new-session" element={<NewSessionPage />} />
           <Route path="session/:sessionId/tracking" element={<AgentTrackingPage />} />
           <Route path="session/:sessionId/report" element={<ReportPage />} />
+          <Route path="session/:sessionId/topology" element={<MacrosessionTopologyPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
