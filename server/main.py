@@ -13,6 +13,7 @@ from database.init_db import init_db
 from routers.auth import router as auth_router
 from routers.events import router as events_router
 from routers.logs import router as logs_router
+from routers.rag import router as rag_router
 from routers.report import router as report_router
 from routers.sessions import router as sessions_router
 
@@ -27,6 +28,10 @@ TAGS_METADATA = [
     {
         "name": "logs",
         "description": "Query an agent session's recorded log trail, stored in Elasticsearch.",
+    },
+    {
+        "name": "rag",
+        "description": "Ask natural-language questions about a session's exploration.",
     },
 ]
 
@@ -63,3 +68,4 @@ app.include_router(sessions_router, prefix="/sessions", tags=["sessions"])
 app.include_router(report_router, prefix="/sessions", tags=["sessions"])
 app.include_router(logs_router, prefix="/sessions", tags=["logs"])
 app.include_router(events_router, prefix="/sessions", tags=["sessions"])
+app.include_router(rag_router, prefix="/sessions", tags=["rag"])

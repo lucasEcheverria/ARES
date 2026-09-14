@@ -28,11 +28,11 @@ function nodeLabel(event: AgentEvent): string {
   return event.content;
 }
 
-const PHASE_VARS: Record<AgentPhase, { text: string; dim: string; border: string }> = {
-  RECON:       { text: "var(--ares-green)",  dim: "var(--ares-green-dim)",  border: "var(--ares-green-border)"  },
-  ENUMERATION: { text: "var(--ares-purple)", dim: "var(--ares-purple-dim)", border: "var(--ares-purple-border)" },
-  VULN_SCAN:   { text: "var(--ares-red)",    dim: "var(--ares-red-dim)",    border: "var(--ares-red-border)"    },
-  REPORT:      { text: "var(--ares-amber)",  dim: "var(--ares-amber-dim)",  border: "var(--ares-amber-border)"  },
+export const PHASE_VARS: Record<AgentPhase, { text: string; dim: string; border: string }> = {
+  RECON:       { text: "var(--ares-green-text)", dim: "var(--ares-green-dim)", border: "var(--ares-green)" },
+  ENUMERATION: { text: "var(--ares-blue-text)",  dim: "var(--ares-blue-dim)",  border: "var(--ares-blue)"  },
+  VULN_SCAN:   { text: "var(--ares-red-text)",   dim: "var(--ares-red-dim)",   border: "var(--ares-red)"   },
+  REPORT:      { text: "var(--ares-amber-text)", dim: "var(--ares-amber-dim)", border: "var(--ares-amber)" },
 };
 
 const btn: CSSProperties = {
@@ -92,10 +92,11 @@ export function AgentGraph({ events }: AgentGraphProps) {
                       onMouseDown={(e) => e.stopPropagation()}
                       style={{
                         minWidth: 148, padding: "10px 14px", textAlign: "left",
-                        border: `1px solid ${isExpanded ? phase.border : "var(--ares-border)"}`,
-                        background: isExpanded ? phase.dim : "var(--ares-surface)",
+                        border: `1px solid ${phase.border}`,
+                        background: phase.dim,
+                        boxShadow: isExpanded ? `0 0 0 2px ${phase.border}` : "none",
                         borderRadius: 8, cursor: "pointer",
-                        transition: "border-color 0.15s, background 0.15s",
+                        transition: "box-shadow 0.15s, background 0.15s",
                         display: "block",
                       }}
                     >
@@ -115,7 +116,7 @@ export function AgentGraph({ events }: AgentGraphProps) {
                       style={{
                         marginTop: 6, padding: 12, maxWidth: 260,
                         border: `1px solid ${phase.border}`,
-                        background: "var(--ares-surface)", borderRadius: 8,
+                        background: phase.dim, borderRadius: 8,
                       }}
                     >
                       <p style={{ margin: "0 0 6px", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: phase.text, fontFamily: "JetBrains Mono, monospace" }}>

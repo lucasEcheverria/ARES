@@ -24,7 +24,7 @@ export function BottomNav() {
             style={{
               flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 500, cursor: disabled ? "default" : "pointer",
               border: "none", background: "transparent",
-              color: isActive ? "var(--ares-blue)" : "var(--ares-text-muted)",
+              color: isActive ? "var(--ares-blue-text)" : "var(--ares-text-muted)",
               opacity: disabled ? 0.4 : 1,
               borderTop: isActive ? "2px solid var(--ares-blue)" : "2px solid transparent",
             }}
